@@ -1,17 +1,83 @@
 #include <Arduino.h>
-#include "buzzer.h"
+#include "./device/device.h"
+#include <Wire.h>
+
+#define I2C_SDA PB7
+#define I2C_SCL PB6
+
+HardwareSerial uart1(PA10, PA9);              // USB
+HardwareSerial uart2(PA3, PA2);               // LINE BOARD
+HardwareSerial uart3(PC_11_ALT1, PC_10_ALT1); // STS3032
+HardwareSerial uart4(PA1, PA0);               // FRONT
+HardwareSerial uart5(PD2, PC12);              // Top
+HardwareSerial uart6(PC7, PC6);               // not used
 
 Buzzer buzzer(PB1);
+STS3032 sts3032(&uart3);
 
-HardwareSerial uart1(PA10, PA9);
+// LoadCell loadcell(PC0, PC1);
+LineUnit line(&uart2);
+ToF tof(PA5, PA6);
+BNO055 bno(55, &Wire);
+volatile bool isRescue;
+
+extern void LineSetup();
+extern void LineLoop();
+extern void RescueSetup();
+extern void RescueLoop();
+
+void init_i2c();
+
 void setup()
 {
-  uart1.begin(115200);
+
+  // init UART (others are initialized in their own classes)
+  uart1.begin(115200); // USB for debug
+  //uart4.begin(115200); // PWR send servo command and receive tof sensor data
+  uart6.begin(115200);
+
+  // // init I2C sensors
+  // init_i2c();
+  // tof.init();
+  // bno.begin();
+  Front::init(&uart4);
+
+  // sts3032.isDisabled = false;
+  // buzzer.isDisabled = false;
+  // sts3032.turn(50, 45);
+  // sts3032.stop();
+
+  // LineSetup();
+
+  // buzzer.boot();
 }
 
 void loop()
 {
-  // put your main code here, to run repeatedly:
-  uart1.println("Hello, World!");
-  buzzer.boot();
+
+  Front::update();
+  Front::print(&uart1);
+  // if (!isRescue)
+  // {
+  //   LineLoop();
+  //   if (isRescue)
+  //   {
+  //     RescueSetup();
+  //   }
+  // }
+  // else
+  // {
+  //   RescueLoop();
+  //   if (!isRescue)
+  //   {
+  //     LineSetup();
+  //   }
+  // }
+}
+
+void init_i2c()
+{
+  Wire.setSDA(I2C_SDA);
+  Wire.setSCL(I2C_SCL);
+  Wire.begin();
 }
