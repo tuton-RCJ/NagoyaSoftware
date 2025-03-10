@@ -84,7 +84,7 @@ void Buzzer::ObjectDetected()
 
 void Buzzer::GreenMarker(int p)
 {
-    if (p > 0)
+    if (p == 1)
     {
         Note notes[] = {
             {C5, 0.5},
@@ -93,7 +93,7 @@ void Buzzer::GreenMarker(int p)
         PlayMusic(notes, 2, 100);
         return;
     }
-    if (p > 1)
+    if (p == 2)
     {
         Note notes[] = {
             {C5, 0.5},
@@ -103,7 +103,7 @@ void Buzzer::GreenMarker(int p)
         PlayMusic(notes, 3, 100);
         return;
     }
-    if (p > 2)
+    if (p == 3)
     {
         Note notes[] = {
             {C5, 0.5},

@@ -8,7 +8,7 @@ class LineUnit
 public:
     LineUnit(HardwareSerial *serial);
     int read();
-    void Flash();
+    void Flush();
     void init();
     void setBrightness(int brightness);
     void checkColor(int *color, unsigned long *colorTime, int *LastColor);

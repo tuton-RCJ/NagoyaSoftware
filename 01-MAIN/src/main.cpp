@@ -23,8 +23,8 @@ volatile bool isRescue;
 
 extern void LineSetup();
 extern void LineLoop();
-extern void RescueSetup();
-extern void RescueLoop();
+void RescueSetup();
+void RescueLoop();
 
 void init_i2c();
 
@@ -33,46 +33,48 @@ void setup()
 
   // init UART (others are initialized in their own classes)
   uart1.begin(115200); // USB for debug
-  //uart4.begin(115200); // PWR send servo command and receive tof sensor data
+  // uart4.begin(115200); // PWR send servo command and receive tof sensor data
   uart6.begin(115200);
 
   // // init I2C sensors
-  // init_i2c();
+  init_i2c();
   // tof.init();
-  // bno.begin();
+  bno.begin();
   Front::init(&uart4);
 
-  // sts3032.isDisabled = false;
-  // buzzer.isDisabled = false;
+  sts3032.isDisabled = false;
+  buzzer.isDisabled = false;
   // sts3032.turn(50, 45);
-  // sts3032.stop();
+  sts3032.stop();
 
   // LineSetup();
-
-  // buzzer.boot();
+  line.init();
+  line.setBrightness(80);
+  buzzer.boot();
 }
 
 void loop()
 {
+  // line.read();
+  // line.print(&uart1);
+  // return;
 
-  Front::update();
-  Front::print(&uart1);
-  // if (!isRescue)
-  // {
-  //   LineLoop();
-  //   if (isRescue)
-  //   {
-  //     RescueSetup();
-  //   }
-  // }
-  // else
-  // {
-  //   RescueLoop();
-  //   if (!isRescue)
-  //   {
-  //     LineSetup();
-  //   }
-  // }
+  if (!isRescue)
+  {
+    LineLoop();
+    if (isRescue)
+    {
+      RescueSetup();
+    }
+  }
+  else
+  {
+    RescueLoop();
+    if (!isRescue)
+    {
+      LineSetup();
+    }
+  }
 }
 
 void init_i2c()
@@ -80,4 +82,14 @@ void init_i2c()
   Wire.setSDA(I2C_SDA);
   Wire.setSCL(I2C_SCL);
   Wire.begin();
+}
+
+void RescueSetup()
+{
+  sts3032.stop();
+}
+
+void RescueLoop()
+{
+  sts3032.stop();
 }

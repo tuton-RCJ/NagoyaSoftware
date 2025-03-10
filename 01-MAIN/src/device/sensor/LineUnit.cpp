@@ -16,47 +16,45 @@ void LineUnit::init()
     }
     LastColorL = 4;
     LastColorR = 4;
-    Flash();
+    Flush();
 }
 
-void LineUnit::Flash()
+void LineUnit::Flush()
 {
     while (_serial->available())
     {
-        _serial->readStringUntil('\n');
+        _serial->read();
     }
 }
 int LineUnit::read()
 {
-    int returnCode = 0;
-    if (_serial->available())
+    if (_serial->available() < 23)
     {
-        String str = _serial->readStringUntil('\n');
-        str = _serial->readStringUntil('\n');
+        return 1;
+    }
 
-        int dataBox[30];
-        StringToIntValues(str, dataBox);
+    if (_serial->read() == 0)
+    {
         for (int i = 0; i < 15; i++)
         {
-            _photoReflector[i] = dataBox[i];
+            _photoReflector[i] = _serial->read();
         }
-        _frontPhotoReflector = dataBox[15];
+        _frontPhotoReflector = _serial->read();
         for (int i = 0; i < 3; i++)
         {
-            colorL[i] = dataBox[16 + i];
+            colorL[i] = _serial->read();
         }
         for (int i = 0; i < 3; i++)
         {
-            colorR[i] = dataBox[19 + i];
+            colorR[i] = _serial->read();
         }
-
-        Flash();
-        checkColor(colorL, colorLTime, &LastColorL);
-        checkColor(colorR, colorRTime, &LastColorR);
-
-        returnCode = 1;
     }
-    return returnCode;
+
+    Flush();
+    checkColor(colorL, colorLTime, &LastColorL);
+    checkColor(colorR, colorRTime, &LastColorR);
+
+    return 0;
 }
 
 void LineUnit::setBrightness(int brightness)
@@ -97,7 +95,7 @@ void LineUnit::checkColor(int colorArr[], unsigned long colorTime[], int *LastCo
     {
         color = 1;
     }
-    else if ((float)colorArr[0] * 1.2f < colorArr[1]) // Green
+    else if (colorArr[0] < 150 && (float)colorArr[0] *1.3f< colorArr[1]) // Green
     {
 
         color = 2;
@@ -106,7 +104,7 @@ void LineUnit::checkColor(int colorArr[], unsigned long colorTime[], int *LastCo
     {
         color = 3;
     }
-    else if (colorArr[0] < 120 && colorArr[1] < 120)
+    else if (colorArr[0] < 150 && colorArr[1] < 150)
     {
         color = 0;
     }
@@ -149,11 +147,15 @@ void LineUnit::print(HardwareSerial *serial)
         serial->print(colorL[i]);
         serial->print(" ");
     }
+    serial->print(LastColorL);
+    serial->print(" ");
     serial->print("R:");
     for (int i = 0; i < 3; i++)
     {
         serial->print(colorR[i]);
         serial->print(" ");
     }
+    serial->print(LastColorR);
+    serial->print(" ");
     serial->println();
 }

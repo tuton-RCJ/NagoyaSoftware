@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 #include "colorsensor.h"
-#include <PacketSerial.h>
 
 #define RANGE_L PB10
 #define GATE_L PB8
@@ -31,9 +30,6 @@ colorsensor colorsensor_R(RANGE_R, GATE_R, CK_R, DOUT_R);
 int startTime;
 int waitTime = 30;
 
-PacketSerial packetSerial;
-uint16_t data[16];
-
 int shiftIn(); // 12ビット分のパルス送信と読み込み処理
 
 void setup()
@@ -42,8 +38,6 @@ void setup()
   // シリアル通信設定
   uart1.begin(115200);
   uart3.begin(115200);
-
-  packetSerial.setStream(&uart1);
 
   strip.begin();
   strip.show();
@@ -76,12 +70,6 @@ void loop()
   colorsensor_R.start();
   startTime = millis();
 
-  for (int i = 0; i < 16; i++)
-  {
-    uartPort.print(analogRead(sensor[i]));
-    uartPort.print(" ");
-  }
-
   while (millis() - startTime < waitTime)
   {
     // 測光時間が経過するまで待機
@@ -90,18 +78,25 @@ void loop()
   colorsensor_L.end();
   colorsensor_R.end();
 
+  uartPort.write(0x00); // ヘッダー
+
+  for (int i = 0; i < 16; i++)
+  {
+    byte data = analogRead(sensor[i]) / 4;
+    if (data == 0)
+    {
+      data = 1;
+    }
+    uartPort.write(data);
+  }
   for (int i = 0; i < 3; i++)
   {
-    uartPort.print(colorsensor_L.color[i]);
-    uartPort.print(" ");
+    uartPort.write(constrain(colorsensor_L.color[i], 1, 255));
   }
-  for (int i = 0; i < 2; i++)
+  for (int i = 0; i < 3; i++)
   {
-    uartPort.print(colorsensor_R.color[i]);
-    uartPort.print(" ");
+    uartPort.write(constrain(colorsensor_R.color[i], 1, 255));
   }
-  uartPort.println(colorsensor_R.color[2]);
-
 
   if (uartPort.available())
   {
@@ -113,5 +108,4 @@ void loop()
     strip.show();
     strip2.show();
   }
-  
 }

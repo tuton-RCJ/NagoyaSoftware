@@ -5,26 +5,26 @@
 extern HardwareSerial uart1;
 
 // Sensor
-extern LoadCell loadcell;
+// extern LoadCell loadcell;
 extern LineUnit line;
-extern ToF tof;
+// extern ToF tof;
 extern BNO055 bno;
 
 // Actuatr
 extern STS3032 sts3032;
-extern Microservo servo;
+// extern Microservo servo;
 extern Buzzer buzzer;
 
 extern bool isRescue;
 //----------------------------------------------
 
 // ライントレース PID用に変数を用意しているがP制御しかしていない
-int Kps[15] = {-8, -6, -4, -4, -3, -2, -2, 0, 2, 2, 3, 4, 4, 6, 8}; // 外側のゲインを大きくするための係数
-int threshold = 800;
-int front_threshould = 900;  // 白と黒の閾値
-int silver_threshould = 100; // 銀の閾値
-int Kp = 16;
-int Kd = 0;
+int Kps[15] = {-7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7}; // 外側のゲインを大きくするための係数
+int threshold = 200;
+int front_threshould = 225; // 前方フォトの閾値（1つ離れているため閾値が他と異なる）
+int silver_threshould = 25; // 銀の閾値
+int Kp = 15;
+int Kd = 10;
 int Ki = 0;
 int lastError = 0;
 int sumError = 0;           // 積分値
@@ -56,36 +56,47 @@ void LineSetup()
 void LineLoop()
 {
 
-  line.read();
-  if (TurningObject)
+  if (line.read() == 0)
   {
-    tof.getTofValues();
-    TurnObject();
     return;
   }
+  // if (TurningObject)
+  // {
+  //   tof.getTofValues();
+  //   TurnObject();
+  //   return;
+  // }
   LineTrace();
   if (isRescue)
     return;
   CheckRed();
   CheckGreen();
   setSlopeStatus();
-  if (SlopeStatus != 2)
-  {
-    CheckObject();
-  }
+  // if (SlopeStatus != 2)
+  // {
+  //   CheckObject();
+  // }
 }
 
 void LineTrace()
 {
-  int error = 0;
+  int black_sum = 0;
+  int black_cnt = 0;
   int pid = 0;
-
+  bool isEdgeLBlack = false;
+  bool isEdgeRBlack = false;
   int turnRate = 0;
   for (int i = 0; i < 15; i++)
   {
     if (line._photoReflector[i] > threshold)
     {
-      error += Kps[i];
+      black_sum += Kps[i];
+      black_cnt++;
+      if (i == 0)
+        isEdgeLBlack = true;
+
+      if (i == 14)
+        isEdgeRBlack = true;
     }
 
     if (line._photoReflector[i] < silver_threshould) // 銀を検知したらレスキューモードに移行
@@ -97,9 +108,26 @@ void LineTrace()
       return;
     }
   }
+  float error = 0;
+  if (black_cnt > 0)
+  {
+    error = black_sum / black_cnt;
+  }
+  if (isEdgeLBlack)
+  {
+    error = Kps[0];
+  }
+  if (isEdgeRBlack)
+  {
+    error = Kps[14];
+  }
+  if (isEdgeLBlack && isEdgeRBlack)
+  {
+    error = 0;
+  }
 
   // トの字判定。前方に黒があり、外側のセンサーが反応している場合。直角をトの字と誤検知することがあるのでスピードを落としている。
-  if (abs(error) > 20 && line._frontPhotoReflector > front_threshould)
+  if (abs(black_sum) > 20 && line._frontPhotoReflector > front_threshould)
   {
     error = 0;
     speed = 20;
@@ -108,6 +136,10 @@ void LineTrace()
   {
     speed = normalSpeed;
   }
+  if (abs(error) <= 1)
+  {
+    speed = 60;
+  }
 
   // PID制御
   sumError += error;
@@ -115,7 +147,9 @@ void LineTrace()
   lastError = error;
 
   turnRate = pid;
-  sts3032.drive(speed, turnRate);
+  // sts3032.drive(speed, turnRate);
+  sts3032.LeftDrive(speed + turnRate, 0);
+  sts3032.RightDrive(speed - turnRate, 0);
 }
 
 void CheckRed()
@@ -178,57 +212,59 @@ void CheckGreen()
         sts3032.turn(50, 180);
         sts3032.stop();
       }
+      line.Flush();
     }
-  }
-}
-void CheckObject()
-{
-  loadcell.read();
-  if (loadcell.values[0] > 150 || loadcell.values[1] > 150)
-  {
-    sts3032.stop();
-    buzzer.ObjectDetected();
-    sts3032.straight(50, -40);
-    sts3032.turn(50, -90);
-    sts3032.straight(50, 180);
-    sts3032.turn(50, 90);
-    sts3032.straight(50, 300);
-    sts3032.turn(50, 70);
-    sts3032.straight(50, 180);
-    sts3032.turn(50, -70);
-    sts3032.straight(50, -50);
-    // TurningObject = true;
   }
 }
 
-void TurnObject()
-{
-  if (tof.tof_values[1] < 120 && tof.tof_values[1] > 70)
-  {
-    buzzer.beep(440, 0.5);
-    sts3032.drive(40, 0);
-  }
-  else
-  {
-    buzzer.beep(880, 0.5);
-    sts3032.drive(40, -70);
-  }
-  bool blackFlag = false;
-  for (int i = 0; i < 15; i++)
-  {
-    if (line._photoReflector[i] > threshold)
-    {
-      blackFlag = true;
-    }
-  }
-  if (blackFlag)
-  {
-    sts3032.stop();
-    buzzer.ObjectDetected();
-    sts3032.turn(50, 60);
-    TurningObject = false;
-  }
-}
+// void CheckObject()
+// {
+//   loadcell.read();
+//   if (loadcell.values[0] > 150 || loadcell.values[1] > 150)
+//   {
+//     sts3032.stop();
+//     buzzer.ObjectDetected();
+//     sts3032.straight(50, -40);
+//     sts3032.turn(50, -90);
+//     sts3032.straight(50, 180);
+//     sts3032.turn(50, 90);
+//     sts3032.straight(50, 300);
+//     sts3032.turn(50, 70);
+//     sts3032.straight(50, 180);
+//     sts3032.turn(50, -70);
+//     sts3032.straight(50, -50);
+//     // TurningObject = true;
+//   }
+// }
+
+// void TurnObject()
+// {
+//   if (tof.tof_values[1] < 120 && tof.tof_values[1] > 70)
+//   {
+//     buzzer.beep(440, 0.5);
+//     sts3032.drive(40, 0);
+//   }
+//   else
+//   {
+//     buzzer.beep(880, 0.5);
+//     sts3032.drive(40, -70);
+//   }
+//   bool blackFlag = false;
+//   for (int i = 0; i < 15; i++)
+//   {
+//     if (line._photoReflector[i] > threshold)
+//     {
+//       blackFlag = true;
+//     }
+//   }
+//   if (blackFlag)
+//   {
+//     sts3032.stop();
+//     buzzer.ObjectDetected();
+//     sts3032.turn(50, 60);
+//     TurningObject = false;
+//   }
+// }
 
 void setSlopeStatus()
 {
