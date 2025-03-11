@@ -19,6 +19,9 @@ STS3032 sts3032(&uart3);
 LineUnit line(&uart2);
 ToF tof(PA5, PA6);
 BNO055 bno(55, &Wire);
+
+L2Unit l2unit(&uart5);
+
 volatile bool isRescue;
 
 extern void LineSetup();
@@ -55,8 +58,8 @@ void setup()
 
 void loop()
 {
-  // line.read();
-  // line.print(&uart1);
+  // l2unit.read();
+  // l2unit.print(&uart1);
   // return;
 
   if (!isRescue)

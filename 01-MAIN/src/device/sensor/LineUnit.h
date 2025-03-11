@@ -29,7 +29,6 @@ public:
 private:
     HardwareSerial *_serial;
 
-    void StringToIntValues(String str, int *values);
 };
 
 #endif

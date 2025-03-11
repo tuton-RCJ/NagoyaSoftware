@@ -14,7 +14,7 @@ extern BNO055 bno;
 extern STS3032 sts3032;
 // extern Microservo servo;
 extern Buzzer buzzer;
-
+extern L2Unit l2unit;
 extern bool isRescue;
 //----------------------------------------------
 
@@ -24,7 +24,7 @@ int threshold = 200;
 int front_threshould = 225; // 前方フォトの閾値（1つ離れているため閾値が他と異なる）
 int silver_threshould = 25; // 銀の閾値
 int Kp = 15;
-int Kd = 10;
+int Kd = 0;
 int Ki = 0;
 int lastError = 0;
 int sumError = 0;           // 積分値
@@ -60,6 +60,8 @@ void LineLoop()
   {
     return;
   }
+  l2unit.read();
+
   // if (TurningObject)
   // {
   //   tof.getTofValues();
@@ -76,6 +78,7 @@ void LineLoop()
   // {
   //   CheckObject();
   // }
+  CheckObject();
 }
 
 void LineTrace()
@@ -217,25 +220,24 @@ void CheckGreen()
   }
 }
 
-// void CheckObject()
-// {
-//   loadcell.read();
-//   if (loadcell.values[0] > 150 || loadcell.values[1] > 150)
-//   {
-//     sts3032.stop();
-//     buzzer.ObjectDetected();
-//     sts3032.straight(50, -40);
-//     sts3032.turn(50, -90);
-//     sts3032.straight(50, 180);
-//     sts3032.turn(50, 90);
-//     sts3032.straight(50, 300);
-//     sts3032.turn(50, 70);
-//     sts3032.straight(50, 180);
-//     sts3032.turn(50, -70);
-//     sts3032.straight(50, -50);
-//     // TurningObject = true;
-//   }
-// }
+void CheckObject()
+{
+  if (l2unit.loadcell_values[0] > 80 || l2unit.loadcell_values[1] > 80)
+  {
+    sts3032.stop();
+    buzzer.ObjectDetected();
+    sts3032.straight(50, -40);
+    sts3032.turn(50, -90);
+    sts3032.straight(50, 180);
+    sts3032.turn(50, 90);
+    sts3032.straight(50, 300);
+    sts3032.turn(50, 70);
+    sts3032.straight(50, 180);
+    sts3032.turn(50, -70);
+    sts3032.straight(50, -50);
+    // TurningObject = true;
+  }
+}
 
 // void TurnObject()
 // {

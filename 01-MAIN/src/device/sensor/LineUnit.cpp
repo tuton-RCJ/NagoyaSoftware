@@ -62,32 +62,6 @@ void LineUnit::setBrightness(int brightness)
     _serial->write(brightness);
 }
 
-void LineUnit::StringToIntValues(String str, int values[])
-{
-    int i = 0;
-    int j = 0;
-    while (i < str.length())
-    {
-        if (j > 29)
-        {
-            break;
-        }
-        if (str[i] == ' ')
-        {
-            i++;
-            continue;
-        }
-        String value = "";
-        while (str[i] != ' ' && i < str.length())
-        {
-            value += str[i];
-            i++;
-        }
-        values[j] = value.toInt();
-        j++;
-    }
-}
-
 void LineUnit::checkColor(int colorArr[], unsigned long colorTime[], int *LastColor)
 {
     int color = 0;                              // Black
