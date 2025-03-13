@@ -11,7 +11,7 @@ public:
     ToF(int tofL, int tofR);
     void init();
     int tof_values[2];
-    void getTofValues();
+    void read();
     void print(HardwareSerial *serial);
 
 private:

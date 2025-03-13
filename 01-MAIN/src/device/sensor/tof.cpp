@@ -11,7 +11,7 @@ void ToF::init()
     int e = init_tof_sensors();
 }
 
-void ToF::getTofValues()
+void ToF::read()
 {
     for (int i = 0; i < 2; i++)
     {
@@ -47,15 +47,9 @@ int ToF::init_tof_sensors()
 
 void ToF::print(HardwareSerial *serial)
 {
-    serial->print("R: ");
+    serial->print("L: ");
     serial->print(tof_values[0]);
-    serial->print(" L: ");
+    serial->print(" R: ");
     serial->print(tof_values[1]);
-    serial->print(" F: ");
-    for (int i = 2; i < 2; i++)
-    {
-        serial->print(tof_values[i]);
-        serial->print(" ");
-    }
     serial->println();
 }

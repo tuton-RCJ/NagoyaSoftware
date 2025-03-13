@@ -17,7 +17,7 @@ STS3032 sts3032(&uart3);
 
 // LoadCell loadcell(PC0, PC1);
 LineUnit line(&uart2);
-ToF tof(PA5, PA6);
+ToF tof(PA6, PA5);
 BNO055 bno(55, &Wire);
 
 L2Unit l2unit(&uart5);
@@ -30,6 +30,7 @@ void RescueSetup();
 void RescueLoop();
 
 void init_i2c();
+void Flush();
 
 void setup()
 {
@@ -41,7 +42,7 @@ void setup()
 
   // // init I2C sensors
   init_i2c();
-  // tof.init();
+  tof.init();
   bno.begin();
   Front::init(&uart4);
 
@@ -58,8 +59,14 @@ void setup()
 
 void loop()
 {
+  // tof.read();
+  // tof.print(&uart1);
+  // return;
   // l2unit.read();
   // l2unit.print(&uart1);
+  // return;
+  // line.read();
+  // line.print(&uart1);
   // return;
 
   if (!isRescue)
@@ -95,4 +102,10 @@ void RescueSetup()
 void RescueLoop()
 {
   sts3032.stop();
+}
+
+void Flush()
+{
+  line.Flush();
+  l2unit.Flush();
 }

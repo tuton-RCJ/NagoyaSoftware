@@ -7,7 +7,7 @@ extern HardwareSerial uart1;
 // Sensor
 // extern LoadCell loadcell;
 extern LineUnit line;
-// extern ToF tof;
+extern ToF tof;
 extern BNO055 bno;
 
 // Actuatr
@@ -43,6 +43,8 @@ void TurnObject();  // 障害物回避中の処理
 void setSlopeStatus();
 int SlopeStatus = 0; // 0:平坦 1:上り 2:下り
 
+extern void Flush();
+
 void LineSetup()
 {
   sumError = 0;
@@ -62,23 +64,19 @@ void LineLoop()
   }
   l2unit.read();
 
-  // if (TurningObject)
-  // {
-  //   tof.getTofValues();
-  //   TurnObject();
-  //   return;
-  // }
+  if (TurningObject)
+  {
+    tof.read();
+    TurnObject();
+    return;
+  }
   LineTrace();
   if (isRescue)
     return;
   CheckRed();
   CheckGreen();
   setSlopeStatus();
-  // if (SlopeStatus != 2)
-  // {
-  //   CheckObject();
-  // }
-  CheckObject();
+  //CheckObject();
 }
 
 void LineTrace()
@@ -215,58 +213,64 @@ void CheckGreen()
         sts3032.turn(50, 180);
         sts3032.stop();
       }
-      line.Flush();
+      Flush();
     }
   }
 }
 
 void CheckObject()
 {
-  if (l2unit.loadcell_values[0] > 80 || l2unit.loadcell_values[1] > 80)
+  if (l2unit.loadcell_values[0] > 155 || l2unit.loadcell_values[1] > 155)
   {
     sts3032.stop();
     buzzer.ObjectDetected();
-    sts3032.straight(50, -40);
-    sts3032.turn(50, -90);
-    sts3032.straight(50, 180);
+    sts3032.straight(50, -20);
     sts3032.turn(50, 90);
-    sts3032.straight(50, 300);
-    sts3032.turn(50, 70);
-    sts3032.straight(50, 180);
-    sts3032.turn(50, -70);
-    sts3032.straight(50, -50);
-    // TurningObject = true;
+    sts3032.straight(50, 30);
+    TurningObject = true;
+    Flush();
   }
 }
 
-// void TurnObject()
-// {
-//   if (tof.tof_values[1] < 120 && tof.tof_values[1] > 70)
-//   {
-//     buzzer.beep(440, 0.5);
-//     sts3032.drive(40, 0);
-//   }
-//   else
-//   {
-//     buzzer.beep(880, 0.5);
-//     sts3032.drive(40, -70);
-//   }
-//   bool blackFlag = false;
-//   for (int i = 0; i < 15; i++)
-//   {
-//     if (line._photoReflector[i] > threshold)
-//     {
-//       blackFlag = true;
-//     }
-//   }
-//   if (blackFlag)
-//   {
-//     sts3032.stop();
-//     buzzer.ObjectDetected();
-//     sts3032.turn(50, 60);
-//     TurningObject = false;
-//   }
-// }
+void TurnObject()
+{
+  if (tof.tof_values[0] < 50)
+  {
+    buzzer.beep(440, 0.5);
+    sts3032.drive(30, 0);
+  }
+  else if (tof.tof_values[0] > 200)
+  {
+    sts3032.turn(30, -40);
+    sts3032.straight(30, 40);
+
+
+  }
+  else
+  {
+    buzzer.beep(880, 0.5);
+
+    sts3032.drive(30, -55);
+  }
+  bool blackFlag = false;
+  for (int i = 0; i < 5; i++)
+  {
+    if (line._photoReflector[i] > threshold)
+    {
+      blackFlag = true;
+    }
+  }
+  if (blackFlag)
+  {
+    sts3032.stop();
+    buzzer.ObjectDetected();
+    sts3032.straight(50, 30);
+    sts3032.turn(50, 80);
+    sts3032.straight(50, -60);
+    TurningObject = false;
+  }
+  Flush();
+}
 
 void setSlopeStatus()
 {

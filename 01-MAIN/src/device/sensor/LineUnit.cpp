@@ -69,7 +69,7 @@ void LineUnit::checkColor(int colorArr[], unsigned long colorTime[], int *LastCo
     {
         color = 1;
     }
-    else if (colorArr[0] < 150 && (float)colorArr[0] *1.3f< colorArr[1]) // Green
+    else if (colorArr[0] < 150 && (float)colorArr[0] * 1.3f < colorArr[1] && _frontPhotoReflector > 225) // Green
     {
 
         color = 2;
@@ -78,7 +78,7 @@ void LineUnit::checkColor(int colorArr[], unsigned long colorTime[], int *LastCo
     {
         color = 3;
     }
-    else if (colorArr[0] < 150 && colorArr[1] < 150)
+    else if (colorArr[0] < 120 && colorArr[1] < 120)
     {
         color = 0;
     }
