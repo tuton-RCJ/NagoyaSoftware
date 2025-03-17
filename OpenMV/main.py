@@ -19,6 +19,8 @@ clock = time.clock()
 # 各種変数
 # debug?
 is_debug = False
+# 初期化
+direction = -1
 # 露光時間 (ms)
 silver_exposure = 4000
 green_exposure = 15000
@@ -50,6 +52,7 @@ old_points = deque([],200)
 all_points = []
 # LED
 led = LED("LED_BLUE")
+led.on()
 start_flag = True
 
 # UART するときのラッパー value:int
@@ -123,8 +126,6 @@ def dbscan(points):
 								seed_set.append(neigh)
 				if labels[j] is None:
 					labels[j] = cluster_id
-
-
 	clusters = {}
 	clusters_xsum = {}
 	for idx, lab in enumerate(labels):
@@ -148,13 +149,13 @@ def detect_silver():
 			continue  # background class
 		if len(detection_list) == 0:
 			continue  # no detections for this class?
-
 		for (x, y, w, h), score in detection_list:
 			center_x = math.floor(x + (w / 2))
 			center_y = math.floor(y + (h / 2))
 			img.draw_circle((center_x, center_y, 12), color=colors[i])
 			result.append((center_x,center_y))
 	return result,img
+
 # 緑ゾーン検知
 def detect_green():
 	while sensor.get_exposure_us() != green_exposure:
@@ -204,7 +205,7 @@ def detect_red():
 def process_points(points,different_flag):
 	global old_points, all_points
 	if different_flag:
-		old_points = deque([])
+		old_points = deque([],100)
 		all_points = []
 	if len(old_points) > 10:
 		del_points = old_points.popleft()
@@ -227,7 +228,7 @@ def detect(direction):
 
 
 while True:
-	led.off()
+	led.on()
 	different_flag = False
 	while uart.any() == 0 and start_flag:
 		pass
@@ -239,7 +240,6 @@ while True:
 	points,img = detect(direction)
 	res = process_points(points,different_flag)
 	send(len(res))
-	led.on()
 	for k,r in res.items():
 		if k == -1:
 			continue
@@ -247,7 +247,8 @@ while True:
 		uart.flush()
 		img.draw_line(r,0,r,120,color=colors[2])
 	uart.write(b"\n")
-	print(*res)
+	print(res)
 	uart.flush()
 	start_flag = False
+	led.off()
 	print(clock.fps())
