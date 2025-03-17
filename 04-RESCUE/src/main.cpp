@@ -2,6 +2,7 @@
 #include "loadcell.h"
 #include "tof.h"
 #include <Wire.h>
+#include "Servo.h"
 
 #define DEBUG 0
 HardwareSerial uart1(PA_10, PA_9);
@@ -14,13 +15,34 @@ ToF tof(PA14, PA15);
 #define I2C_SDA PB7
 #define I2C_SCL PB6
 
+#define HandRPin PA8
+#define HandLPin PA11
+#define ArmLPin PA1
+#define ArmRPin PA0
+#define BasketPin PA6
+
+Servo HandL;
+Servo HandR;
+Servo ArmL;
+Servo ArmR;
+Servo basket;
+
 void init_i2c()
 {
   Wire.setSDA(I2C_SDA);
   Wire.setSCL(I2C_SCL);
   Wire.begin();
 }
-
+void HandOpen()
+{
+  HandR.write(0);
+  HandL.write(180);
+}
+void HandClose()
+{
+  HandR.write(180);
+  HandL.write(10);
+}
 void setup()
 {
   // put your setup code here, to run once:
@@ -29,10 +51,25 @@ void setup()
   init_i2c();
   loadcell.init();
   tof.init();
+  HandL.attach(HandLPin, 500, 2600);
+  HandR.attach(HandRPin, 500, 2600);
+  ArmL.attach(ArmLPin);
+  ArmR.attach(ArmRPin);
+  basket.attach(BasketPin);
+  HandClose();
 }
 
 void loop()
 {
+  ArmL.write(140);
+  ArmR.write(50);
+  delay(1500);
+
+  ArmL.write(70);
+  ArmR.write(110);
+  delay(700);
+
+  return;
 
   tof.getTofValues();
   loadcell.read();
