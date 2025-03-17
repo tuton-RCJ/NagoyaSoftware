@@ -48,51 +48,87 @@ void setup()
   // put your setup code here, to run once:
   uart1.begin(115200);
   uart2.begin(115200);
+  uart3.begin(115200);
   init_i2c();
   loadcell.init();
   tof.init();
-  HandL.attach(HandLPin, 500, 2600);
-  HandR.attach(HandRPin, 500, 2600);
-  ArmL.attach(ArmLPin);
-  ArmR.attach(ArmRPin);
-  basket.attach(BasketPin);
-  HandClose();
+  // HandL.attach(HandLPin, 500, 2600);
+  // HandR.attach(HandRPin, 500, 2600);
+  // ArmL.attach(ArmLPin);
+  // ArmR.attach(ArmRPin);
+  // basket.attach(BasketPin);
+  // HandClose();
 }
 
 void loop()
 {
-  ArmL.write(140);
-  ArmR.write(50);
-  delay(1500);
 
-  ArmL.write(70);
-  ArmR.write(110);
-  delay(700);
+  // ArmL.write(140);
+  // ArmR.write(50);
+  // delay(1500);
 
-  return;
+  // ArmL.write(70);
+  // ArmR.write(110);
+  // delay(700);
 
   tof.getTofValues();
   loadcell.read();
-  uart2.write(0); // ヘッダー
-  uart2.write(tof.tof_values[0] >> 8);
-  uart2.write(tof.tof_values[0]);
-  uart2.write(tof.tof_values[1] >> 8);
-  uart2.write(tof.tof_values[1]);
-  uart2.write(max(loadcell.raw_values[0] / 4, 1));
-  uart2.write(max(loadcell.raw_values[1] / 4, 1));
-
   if (DEBUG)
   {
-    uart1.print("ToF: ");
+
     uart1.print(tof.tof_values[0]);
     uart1.print(" ");
     uart1.print(tof.tof_values[1]);
-    uart1.print(" Loadcell: ");
-    uart1.print(loadcell.values[0]);
     uart1.print(" ");
-    uart1.print(loadcell.values[1]);
+    uart1.print(loadcell.raw_values[0]);
     uart1.print(" ");
-    uart1.print(millis());
+    uart1.print(loadcell.raw_values[1]);
+    while (uart3.available())
+    {
+      char c = uart3.read();
+      if (c == '\n')
+      {
+        break;
+      }
+      uart1.write(uart3.read());
+    }
     uart1.println();
+  }
+  else
+  {
+
+    uart2.print(tof.tof_values[0]);
+    uart2.print(" ");
+    uart2.print(tof.tof_values[1]);
+    uart2.print(" ");
+    uart2.print(loadcell.raw_values[0]);
+    uart2.print(" ");
+    uart2.print(loadcell.raw_values[1]);
+    uart2.print(" ");
+    while (uart3.available())
+    {
+      char c = uart3.read();
+      if (c == '\n')
+      {
+        break;
+      }
+      uart2.write(uart3.read());
+    }
+    uart2.println();
+  }
+
+  if (uart2.available())
+  {
+    byte c = uart2.read();
+    if (c < 4)
+    {
+      uart3.write(c);
+    }
+    else if(c==4){
+      //readStringしてそのままUI基板に垂れ流す。
+    }
+    else{
+      //サーボモータを動かす処理を書く
+    }
   }
 }
