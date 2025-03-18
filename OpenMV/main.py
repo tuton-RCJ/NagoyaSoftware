@@ -178,13 +178,12 @@ def detect_black():
 		if o[2]+o[3] > 100:
 			continue
 		if abs(o[2]-o[3]) <= 4:
-			img2 = img.copy(roi=(o[0],o[1],o[2],o[3]))
 			obj = img.find_circles(roi=(o[0]-3,o[1]-3,o[2]+6,o[3]+6),threshold=2000,)
 			max_size = 0
 			for val_obj in obj:
 				img.draw_circle(val_obj[:3],colors[3])
 				max_size = max(val_obj.r(),max_size)
-			if img2.get_statistics().lq() < 40 and  (max_size*2 / (o[2]+o[3]) > 0.35):
+			if img.get_statistics(roi=(o[0],o[1],o[2],o[3])).lq() < 40 and  (max_size*2 / (o[2]+o[3]) > 0.35):
 				img.draw_rectangle(o[:4],colors[4])
 				result.append((o[0]+o[2]//2,o[1]+o[3]//2))
 	return result,img
