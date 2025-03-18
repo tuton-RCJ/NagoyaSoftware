@@ -246,7 +246,7 @@ while True:
 		send(r)
 		uart.flush()
 		img.draw_line(r,0,r,120,color=colors[2])
-	uart.write(b"\n")
+	uart.write(ustruct.pack("s","\n"))
 	print(res)
 	uart.flush()
 	start_flag = False
