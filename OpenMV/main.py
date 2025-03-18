@@ -152,7 +152,7 @@ def detect_silver():
 		for (x, y, w, h), score in detection_list:
 			center_x = math.floor(x + (w / 2))
 			center_y = math.floor(y + (h / 2))
-			img.draw_circle((center_x, center_y, 12), color=colors[i])
+			img.draw_circle((center_x, center_y, 12), color=colors[0])
 			result.append((center_x,center_y))
 	return result,img
 
@@ -163,7 +163,7 @@ def detect_green():
 	img = sensor.snapshot()
 	result = []
 	for obj in img.find_blobs(thre_green,area_threshold=50,merge=True):
-		img.draw_rectangle(obj[:4],colors[3])
+		img.draw_rectangle(obj[:4],colors[1])
 		result.append((obj[0]+obj[2]//2,obj[1]+obj[3]//2))
 	return result,img
 
@@ -174,7 +174,7 @@ def detect_black():
 	img = sensor.snapshot()
 	result = []
 	for o in img.find_blobs(thre_black,area_threshold=50):
-		img.draw_rectangle(o[:4],colors[1])
+		img.draw_rectangle(o[:4],colors[2])
 		if o[2]+o[3] > 100:
 			continue
 		if abs(o[2]-o[3]) <= 4:
@@ -182,10 +182,10 @@ def detect_black():
 			obj = img.find_circles(roi=(o[0]-3,o[1]-3,o[2]+6,o[3]+6),threshold=2000,)
 			max_size = 0
 			for val_obj in obj:
-				img.draw_circle(val_obj[:3],colors[0])
+				img.draw_circle(val_obj[:3],colors[3])
 				max_size = max(val_obj.r(),max_size)
 			if img2.get_statistics().lq() < 40 and  (max_size*2 / (o[2]+o[3]) > 0.35):
-				img.draw_rectangle(o[:4],colors[1])
+				img.draw_rectangle(o[:4],colors[4])
 				result.append((o[0]+o[2]//2,o[1]+o[3]//2))
 	return result,img
 
@@ -198,7 +198,7 @@ def detect_red():
 	result = []
 	for obj in img.find_blobs(thre_red,area_threshold=50,merge=True):
 		result.append((obj[0]+obj[2]//2,obj[1]+obj[3]//2))
-		img.draw_rectangle(obj[:4],color=colors[3])
+		img.draw_rectangle(obj[:4],color=colors[5])
 	return result,img
 
 # 点群の処理と、UART
@@ -245,7 +245,7 @@ while True:
 			continue
 		send(r)
 		uart.flush()
-		img.draw_line(r,0,r,120,color=colors[2])
+		img.draw_line(r,0,r,120,color=colors[6])
 	uart.write(ustruct.pack("s","\n"))
 	print(res)
 	uart.flush()
