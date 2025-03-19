@@ -238,14 +238,13 @@ while True:
 	debug_print(direction)
 	points,img = detect(direction)
 	res = process_points(points,different_flag)
-	send(len(res))
+	min_r = 255
 	for k,r in res.items():
 		if k == -1:
 			continue
-		send(r)
-		uart.flush()
+		min_r = min(r,min_r)
 		img.draw_line(r,0,r,120,color=colors[6])
-	uart.write(ustruct.pack("s","\n"))
+	send(min_r)
 	print(res)
 	uart.flush()
 	start_flag = False
