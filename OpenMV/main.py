@@ -142,7 +142,7 @@ def dbscan(points):
 def detect_silver():
 	while sensor.get_exposure_us() != silver_exposure:
 		sensor.set_auto_exposure(False,exposure_us=silver_exposure)
-	img = sensor.snapshot()
+	img = sensor.snapshot().lens_corr(1.8)
 	result = []
 	for i, detection_list in enumerate(model.predict([img], callback=fomo_post_process)):
 		if i == 0:
@@ -160,7 +160,7 @@ def detect_silver():
 def detect_green():
 	while sensor.get_exposure_us() != green_exposure:
 		sensor.set_auto_exposure(False,exposure_us=green_exposure)
-	img = sensor.snapshot()
+	img = sensor.snapshot().lens_corr(1.8)
 	result = []
 	for obj in img.find_blobs(thre_green,area_threshold=50,merge=True):
 		img.draw_rectangle(obj[:4],colors[1])
@@ -171,7 +171,7 @@ def detect_green():
 def detect_black():
 	while sensor.get_exposure_us() != black_exposure:
 		sensor.set_auto_exposure(False,exposure_us=black_exposure)
-	img = sensor.snapshot()
+	img = sensor.snapshot().lens_corr(1.8)
 	result = []
 	for o in img.find_blobs(thre_black,area_threshold=50):
 		img.draw_rectangle(o[:4],colors[2])
@@ -193,7 +193,7 @@ def detect_red():
 	while sensor.get_exposure_us() != red_exposure:
 		sensor.set_auto_exposure(False,exposure_us=red_exposure)
 	clock.tick()
-	img = sensor.snapshot()
+	img = sensor.snapshot().lens_corr(1.8)
 	result = []
 	for obj in img.find_blobs(thre_red,area_threshold=50,merge=True):
 		result.append((obj[0]+obj[2]//2,obj[1]+obj[3]//2))
