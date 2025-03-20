@@ -1,13 +1,20 @@
 #include "front.h"
-void Front::init(HardwareSerial *serial)
+Front::Front(HardwareSerial *serial)
 {
     _serial = serial;
     _serial->begin(115200);
+    init();
+}
+
+void Front::init()
+{
     for (int i = 0; i < NUM_VALUES; i++)
     {
         values[i] = 0;
     }
+    Flush();
 }
+
 void Front::Flush()
 {
     while (_serial->available())
@@ -16,11 +23,11 @@ void Front::Flush()
     }
 }
 
-void Front::read()
+bool Front::read()
 {
     if (_serial->available() < receiveSize + 1)
     {
-        return 1;
+        return false;
     }
 
     if (_serial->read() == 255)
@@ -33,7 +40,7 @@ void Front::read()
     }
     Flush();
 
-    return 0;
+    return true;
 }
 
 void Front::print(HardwareSerial *printSerial)

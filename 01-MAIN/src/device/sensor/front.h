@@ -3,16 +3,18 @@
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <PacketSerial.h>
 
 class Front
 {
 public:
-    void init(HardwareSerial *serial);
-    uint16_t values[5];
-    void print(HardwareSerial *serial);
-    void read();
+    Front(HardwareSerial *serial);
+    void init();
+    bool read();
     void Flush();
+    void print(HardwareSerial *serial);
+
+
+    uint16_t values[5];
 
 private:
     const size_t NUM_VALUES = 5;

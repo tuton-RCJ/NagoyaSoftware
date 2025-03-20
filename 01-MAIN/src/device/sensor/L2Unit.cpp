@@ -25,11 +25,11 @@ void L2Unit::Flush()
     }
 }
 
-int L2Unit::read()
+bool L2Unit::read()
 {
     if (_serial->available() < receiveSize + 1)
     {
-        return 1;
+        return false;
     }
 
     if (_serial->read() == 255)
@@ -53,7 +53,7 @@ int L2Unit::read()
 
     Flush();
 
-    return 0;
+    return true;
 }
 
 void L2Unit::print(HardwareSerial *serial)

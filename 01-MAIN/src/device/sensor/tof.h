@@ -10,13 +10,14 @@ class ToF
 public:
     ToF(int tofL, int tofR);
     void init();
-    int tof_values[2];
     void read();
     void print(HardwareSerial *serial);
 
+    int values[2];
+
 private:
-    int tof_pins[2];
-    VL53L0X tof_sensors[2];
+    int _pins[2];
+    VL53L0X _sensors[2];
     int init_tof_sensors();
 };
 

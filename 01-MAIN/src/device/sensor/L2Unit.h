@@ -7,14 +7,19 @@ class L2Unit
 {
 public:
     L2Unit(HardwareSerial *serial);
-    int read();
-    void Flush();
     void init();
+    bool read();
+    void Flush();
+    void print(HardwareSerial *serial);
 
+
+    //received data
     int tof_values[2];
     int loadcell_values[2]; // 0~254 1023を1/4に圧縮。
     int OpenMVData;         // 0~160, 255=not found
 
+
+    // send message
     void setCameraTarget(int target); // 0=銀、1=緑、2=黒、3=赤
 
     void ArmDown();
@@ -22,7 +27,7 @@ public:
     void BasketOpen();
     void BasketClose();
 
-    void print(HardwareSerial *serial);
+
 
 private:
     HardwareSerial *_serial;

@@ -26,11 +26,11 @@ void LineUnit::Flush()
         _serial->read();
     }
 }
-int LineUnit::read()
+bool LineUnit::read()
 {
     if (_serial->available() < 23)
     {
-        return 1;
+        return false;
     }
 
     if (_serial->read() == 0)
@@ -38,8 +38,32 @@ int LineUnit::read()
         for (int i = 0; i < 15; i++)
         {
             _photoReflector[i] = _serial->read();
+            if (_photoReflector[i] > threshold)
+            {
+                _photoReflector[i] = 1;
+            }
+            else if (_photoReflector[i] < silver_threshould)
+            {
+                _photoReflector[i] = 2;
+            }
+            else
+            {
+                _photoReflector[i] = 0;
+            }
         }
         _frontPhotoReflector = _serial->read();
+        if (_frontPhotoReflector > front_threshould)
+        {
+            _frontPhotoReflector = 1;
+        }
+        else if (_frontPhotoReflector < silver_threshould)
+        {
+            _frontPhotoReflector = 2;
+        }
+        else
+        {
+            _frontPhotoReflector = 0;
+        }
         for (int i = 0; i < 3; i++)
         {
             colorL[i] = _serial->read();
@@ -54,7 +78,7 @@ int LineUnit::read()
     checkColor(colorL, colorLTime, &LastColorL);
     checkColor(colorR, colorRTime, &LastColorR);
 
-    return 0;
+    return true;
 }
 
 void LineUnit::setBrightness(int brightness)

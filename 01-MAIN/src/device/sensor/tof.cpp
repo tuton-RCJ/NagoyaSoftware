@@ -2,8 +2,8 @@
 
 ToF::ToF(int tofL, int tofR)
 {
-    tof_pins[0] = tofL;
-    tof_pins[1] = tofR;
+    _pins[0] = tofL;
+    _pins[1] = tofR;
 }
 
 void ToF::init()
@@ -15,7 +15,7 @@ void ToF::read()
 {
     for (int i = 0; i < 2; i++)
     {
-        tof_values[i] = tof_sensors[i].readRangeContinuousMillimeters();
+        values[i] = _sensors[i].readRangeContinuousMillimeters();
     }
 }
 
@@ -23,24 +23,24 @@ int ToF::init_tof_sensors()
 {
     for (int i = 0; i < 2; i++)
     {
-        pinMode(tof_pins[i], OUTPUT);
-        digitalWrite(tof_pins[i], LOW);
+        pinMode(_pins[i], OUTPUT);
+        digitalWrite(_pins[i], LOW);
     }
     delay(100);
     for (int i = 0; i < 2; i++)
     {
 
-        digitalWrite(tof_pins[i], HIGH);
+        digitalWrite(_pins[i], HIGH);
         delay(20);
-        tof_sensors[i].setTimeout(500);
-        if (!tof_sensors[i].init())
+        _sensors[i].setTimeout(500);
+        if (!_sensors[i].init())
         {
             // debugSerial->println("Failed to detect and initialize sensor!");
             return 1;
         }
-        tof_sensors[i].setAddress(0x30 + i);
+        _sensors[i].setAddress(0x30 + i);
 
-        tof_sensors[i].startContinuous(0);
+        _sensors[i].startContinuous(0);
     }
     return 0;
 }
@@ -48,8 +48,8 @@ int ToF::init_tof_sensors()
 void ToF::print(HardwareSerial *serial)
 {
     serial->print("L: ");
-    serial->print(tof_values[0]);
+    serial->print(values[0]);
     serial->print(" R: ");
-    serial->print(tof_values[1]);
+    serial->print(values[1]);
     serial->println();
 }

@@ -20,9 +20,7 @@ extern bool isRescue;
 
 // ライントレース PID用に変数を用意しているがP制御しかしていない
 int Kps[15] = {-7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7}; // 外側のゲインを大きくするための係数
-int threshold = 200;
-int front_threshould = 225; // 前方フォトの閾値（1つ離れているため閾値が他と異なる）
-int silver_threshould = 25; // 銀の閾値
+
 int Kp = 15;
 int Kd = 0;
 int Ki = 0;
@@ -57,10 +55,7 @@ void LineSetup()
 
 void LineLoop()
 {
-  if (line.read() == 0)
-  {
-    return;
-  }
+  line.read();
   l2unit.read();
 
   if (TurningObject)
@@ -69,9 +64,11 @@ void LineLoop()
     TurnObject();
     return;
   }
+
   LineTrace();
   if (isRescue)
     return;
+
   CheckRed();
   CheckGreen();
   setSlopeStatus();
@@ -88,7 +85,7 @@ void LineTrace()
   int turnRate = 0;
   for (int i = 0; i < 15; i++)
   {
-    if (line._photoReflector[i] > threshold)
+    if (line.photoReflector[i] == 1)
     {
       black_sum += Kps[i];
       black_cnt++;
@@ -99,7 +96,7 @@ void LineTrace()
         isEdgeRBlack = true;
     }
 
-    if (line._photoReflector[i] < silver_threshould) // 銀を検知したらレスキューモードに移行
+    if (line.photoReflector[i] == 2) // 銀を検知したらレスキューモードに移行
     {
       isRescue = true;
       sts3032.stop();
@@ -125,7 +122,7 @@ void LineTrace()
   }
 
   // トの字判定。前方に黒があり、外側のセンサーが反応している場合。直角をトの字と誤検知することがあるのでスピードを落としている。
-  if (abs(black_sum) > 20 && line._frontPhotoReflector > front_threshould)
+  if (abs(black_sum) > 20 && line.frontPhotoReflector==1)
   {
     error = 0;
     speed = 20;
@@ -161,7 +158,7 @@ void CheckRed()
 
 void CheckGreen()
 {
-  if ((line.LastColorL == 0 || line.LastColorR == 0)) // && line._frontPhotoReflector)
+  if ((line.LastColorL == 0 || line.LastColorR == 0)) // && line.frontPhotoReflector==1)
   {
     int p = 0;
     // if (line.LastColorL == 0)
@@ -231,17 +228,15 @@ void CheckObject()
 
 void TurnObject()
 {
-  if (tof.tof_values[0] < 50)
+  if (tof.values[0] < 50)
   {
     buzzer.beep(440, 0.5);
     sts3032.drive(30, 0);
   }
-  else if (tof.tof_values[0] > 200)
+  else if (tof.values[0] > 200)
   {
     sts3032.turn(30, -40);
     sts3032.straight(30, 40);
-
-
   }
   else
   {
@@ -252,7 +247,7 @@ void TurnObject()
   bool blackFlag = false;
   for (int i = 0; i < 5; i++)
   {
-    if (line._photoReflector[i] > threshold)
+    if (line.photoReflector[i]==1)
     {
       blackFlag = true;
     }
