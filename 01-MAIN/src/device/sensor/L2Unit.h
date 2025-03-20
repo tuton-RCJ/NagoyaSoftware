@@ -12,13 +12,21 @@ public:
     void init();
 
     int tof_values[2];
-    int loadcell_values[2];
+    int loadcell_values[2]; // 0~254 1023を1/4に圧縮。
+    int OpenMVData;         // 0~160, 255=not found
+
+    void setCameraTarget(int target); // 0=銀、1=緑、2=黒、3=赤
+
+    void ArmDown();
+    void ArmUp();
+    void BasketOpen();
+    void BasketClose();
 
     void print(HardwareSerial *serial);
 
 private:
     HardwareSerial *_serial;
-    const int receiveSize = 6; //ヘッダーをのぞいたバイト数
+    const int receiveSize = 7; // ヘッダーをのぞいたバイト数
 };
 
 #endif

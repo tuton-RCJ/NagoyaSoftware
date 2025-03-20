@@ -26,8 +26,8 @@ volatile bool isRescue;
 
 extern void LineSetup();
 extern void LineLoop();
-void RescueSetup();
-void RescueLoop();
+extern void RescueSetup();
+extern void RescueLoop();
 
 void init_i2c();
 void Flush();
@@ -37,8 +37,6 @@ void setup()
 
   // init UART (others are initialized in their own classes)
   uart1.begin(115200); // USB for debug
-  // uart4.begin(115200); // PWR send servo command and receive tof sensor data
-  uart6.begin(115200);
 
   // // init I2C sensors
   init_i2c();
@@ -55,10 +53,14 @@ void setup()
   line.init();
   line.setBrightness(80);
   buzzer.boot();
+
+
 }
 
 void loop()
 {
+
+
   // tof.read();
   // tof.print(&uart1);
   // return;
@@ -94,18 +96,8 @@ void init_i2c()
   Wire.begin();
 }
 
-void RescueSetup()
-{
-  sts3032.stop();
-}
-
-void RescueLoop()
-{
-  sts3032.stop();
-}
-
 void Flush()
 {
   line.Flush();
-  l2unit.Flush();
+  // l2unit.Flush();
 }

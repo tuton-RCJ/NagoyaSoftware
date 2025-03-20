@@ -57,7 +57,6 @@ void LineSetup()
 
 void LineLoop()
 {
-
   if (line.read() == 0)
   {
     return;
@@ -76,7 +75,7 @@ void LineLoop()
   CheckRed();
   CheckGreen();
   setSlopeStatus();
-  //CheckObject();
+  CheckObject();
 }
 
 void LineTrace()
@@ -104,8 +103,6 @@ void LineTrace()
     {
       isRescue = true;
       sts3032.stop();
-      buzzer.EnterEvacuationZone();
-      sts3032.straight(50, 150);
       return;
     }
   }

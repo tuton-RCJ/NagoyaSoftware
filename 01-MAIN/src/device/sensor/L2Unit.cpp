@@ -32,7 +32,7 @@ int L2Unit::read()
         return 1;
     }
 
-    if (_serial->read() == 0)
+    if (_serial->read() == 255)
     {
         for (int i = 0; i < 2; i++)
         {
@@ -43,6 +43,11 @@ int L2Unit::read()
         for (int i = 0; i < 2; i++)
         {
             loadcell_values[i] = _serial->read();
+        }
+        OpenMVData = _serial->read();
+        if (OpenMVData == 254)
+        {
+            OpenMVData = 255;
         }
     }
 
@@ -67,5 +72,31 @@ void L2Unit::print(HardwareSerial *serial)
         serial->print(loadcell_values[i]);
         serial->print(" ");
     }
+    serial->print("OpenMV: ");
+    serial->print(OpenMVData);
     serial->println();
+}
+
+
+
+void L2Unit::setCameraTarget(int target)
+{
+    _serial->write(target);
+}
+
+void L2Unit::ArmDown()
+{
+    _serial->write(5);
+}
+void L2Unit::ArmUp()
+{
+    _serial->write(6);
+}
+void L2Unit::BasketOpen()
+{
+    _serial->write(7);
+}
+void L2Unit::BasketClose()
+{
+    _serial->write(8);
 }

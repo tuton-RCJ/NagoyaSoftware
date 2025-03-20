@@ -10,7 +10,7 @@ class ToF
 public:
     ToF(int front1, int front2);
     void init();
-    int tof_values[2];
+    int values[2];
     void getTofValues();
     void print(HardwareSerial *serial);
 
