@@ -12,8 +12,10 @@ public:
     void Flush();
     void print(HardwareSerial *serial);
 
-    int photoReflector[15]; //0=白、1=黒、2=銀
-    int frontPhotoReflector; //0=白、1=黒、2=銀
+    /// @brief 0=白、1=黒、2=銀
+    int photoReflector[15]; 
+    /// @brief 0=白、1=黒、2=銀
+    int frontPhotoReflector;
 
     int colorL[3];
     int colorR[3]; 

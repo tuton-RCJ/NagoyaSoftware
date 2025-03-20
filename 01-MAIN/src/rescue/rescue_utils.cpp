@@ -26,15 +26,14 @@ const int midX = 80; // カメラの中央の x 座標
 const int HFOV = 60; // OpenMV の水平視野角
 const int PGain = 5; // カメラから送られてきた重心を基準に前に進む時のP 制御のゲイン
 
-
 int XtoTurnRate(int x);
-bool GetFrontObject(int threshold);
+int GetFrontObject();
 void SetEntranceWallRight();
 
 void Pcontrol(int x);
 void Kabeyoke(bool isWallleft);
 void BallDrop();
-
+void tremble(int times);
 
 /// @brief 進むときに壁への衝突を防ぐ
 /// @param isWallLeft　壁が左側にあるかどうか
@@ -57,7 +56,9 @@ void Kabeyoke(bool isWallLeft)
 void BallDrop()
 {
     l2unit.BasketOpen();
-    delay(1000);
+    delay(500);
+    tremble(3);
+    delay(500);
     l2unit.BasketClose();
     delay(1000);
 }
@@ -77,21 +78,21 @@ void Pcontrol(int x)
     sts3032.drive(20, (midX - x) * PGain);
 }
 
-/// @brief 正面に物体があるかを判定する
-/// @param threshold 閾値
-/// @return true: 物体がある, false: 物体がない
-bool GetFrontObject(int threshold)
+/// @brief 正面の物体までの距離を取得する
+/// @return ToFセンサの最小値
+int GetFrontObject()
 {
     while (!front.read())
         ;
-    for (int i = 0; i < 5; i++)
+    int returnVal = front.values[0];
+    for (int i = 1; i < 5; i++)
     {
-        if (front.values[i] < threshold)
+        if (front.values[i] < returnVal)
         {
-            return true;
+            returnVal = front.values[i];
         }
     }
-    return false;
+    return returnVal;
 }
 
 void SetEntranceWallRight()
@@ -104,5 +105,17 @@ void SetEntranceWallRight()
     else
     {
         EntranceWallRight = false;
+    }
+}
+
+void tremble(int times)
+{
+    int speed = 50;
+    for (int i = 0; i < times; i++)
+    {
+        sts3032.drive(speed, 0);
+        delay(200);
+        sts3032.drive(-speed, 0);
+        delay(200);
     }
 }

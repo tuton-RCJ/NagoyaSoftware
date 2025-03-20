@@ -35,6 +35,7 @@ void init_i2c()
   Wire.setSCL(I2C_SCL);
   Wire.begin();
 }
+
 void HandOpen()
 {
   HandR.write(60);
@@ -45,14 +46,7 @@ void HandClose()
   HandR.write(180);
   HandL.write(10);
 }
-void BasketOpen()
-{
-  basket.write(80);
-}
-void BasketClose()
-{
-  basket.write(90);
-}
+
 void AttachHand()
 {
   HandL.attach(HandLPin, 500, 2600);
@@ -63,6 +57,30 @@ void DetachHand()
   HandL.detach();
   HandR.detach();
 }
+
+void AttachBasket()
+{
+  basket.attach(BasketPin);
+}
+void DetachBasket()
+{
+  basket.detach();
+}
+void BasketOpen()
+{
+  AttachBasket();
+  basket.write(80);
+  delay(500);
+  DetachBasket();
+}
+void BasketClose()
+{
+  AttachBasket();
+  basket.write(90);
+  delay(500);
+  DetachBasket();
+}
+
 void AttachArm()
 {
   ArmL.attach(ArmLPin, 500, 2400);
@@ -98,16 +116,13 @@ void setup()
   init_i2c();
   loadcell.init();
   tof.init();
-  HandL.attach(HandLPin, 500, 2600);
-  HandR.attach(HandRPin, 500, 2600);
-  basket.attach(BasketPin);
-  basket.write(50);
+
   AttachHand();
   HandClose();
   ArmUp();
   DetachHand();
+  BasketClose();
   OpenMVData = 255;
-  // HandClose();
 }
 
 void loop()
@@ -149,21 +164,35 @@ void loop()
       // サーボモータを動かす処理を書く
       if (c == 5)
       {
-        AttachHand();
-        HandOpen();
         ArmDown();
       }
       else if (c == 6)
       {
-        AttachHand();
-        HandClose();
-        delay(500);
         ArmUp();
-        DetachHand();
       }
       else if (c == 7)
       {
+        HandOpen();
+      }
+      else if (c == 8)
+      {
+        HandClose();
+      }
+      else if (c == 9)
+      {
         BasketOpen();
+      }
+      else if (c == 10)
+      {
+        BasketClose();
+      }
+      else if (c == 11)
+      {
+        AttachHand();
+      }
+      else if (c == 12)
+      {
+        DetachHand();
       }
     }
   }
