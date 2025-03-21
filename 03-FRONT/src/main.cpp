@@ -21,6 +21,7 @@ void setup()
     Wire.setSDA(D4);
     Wire.begin();
 
+    delay(300);
     tof.init();
 
     // put your setup code here, to run once:
@@ -28,6 +29,12 @@ void setup()
     for (int i = 0; i < NUMPIXELS; i++)
     {
         pixels.setPixelColor(i, pixels.Color(0, 78, 0));
+        pixels.show();
+        delay(100);
+    }
+    for (int i = 0; i < NUMPIXELS; i++)
+    {
+        pixels.setPixelColor(i, pixels.Color(0, 0, 0));
         pixels.show();
         delay(100);
     }
@@ -46,16 +53,16 @@ void loop()
     }
     // Serial.println("Hello World");
 
-    for (int i = 0; i < NUMPIXELS; i++)
-    {
-        if (tof.tof_values[i] < 50)
-        {
-            pixels.setPixelColor(i, pixels.Color(78, 0, 0));
-        }
-        else
-        {
-            pixels.setPixelColor(i, pixels.Color(0, 78, 0));
-        }
-    }
-    pixels.show();
+    // for (int i = 0; i < NUMPIXELS; i++)
+    // {
+    //     if (tof.tof_values[i] < 50)
+    //     {
+    //         pixels.setPixelColor(i, pixels.Color(78, 0, 0));
+    //     }
+    //     else
+    //     {
+    //         pixels.setPixelColor(i, pixels.Color(0, 78, 0));
+    //     }
+    // }
+    // pixels.show();
 }

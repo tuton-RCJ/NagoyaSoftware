@@ -18,17 +18,16 @@ extern Front front;
 
 //-----------------------------------------
 
-extern bool EntranceWallRight; // 入口の右側に壁があるかどうか
+
 
 //-----------------------------------------
 
 const int midX = 80; // カメラの中央の x 座標
 const int HFOV = 60; // OpenMV の水平視野角
-const int PGain = 5; // カメラから送られてきた重心を基準に前に進む時のP 制御のゲイン
+const int PGain = 1; // カメラから送られてきた重心を基準に前に進む時のP 制御のゲイン
 
 int XtoTurnRate(int x);
 int GetFrontObject();
-void SetEntranceWallRight();
 
 void Pcontrol(int x);
 void Kabeyoke(bool isWallleft);
@@ -75,7 +74,7 @@ int XtoTurnRate(int x)
 /// @param x 0~160 の x 座標
 void Pcontrol(int x)
 {
-    sts3032.drive(20, (midX - x) * PGain);
+    sts3032.drive(30, (midX - x) * PGain);
 }
 
 /// @brief 正面の物体までの距離を取得する
@@ -95,18 +94,6 @@ int GetFrontObject()
     return returnVal;
 }
 
-void SetEntranceWallRight()
-{
-    tof.read();
-    if (tof.values[0] > tof.values[1])
-    {
-        EntranceWallRight = true;
-    }
-    else
-    {
-        EntranceWallRight = false;
-    }
-}
 
 void tremble(int times)
 {

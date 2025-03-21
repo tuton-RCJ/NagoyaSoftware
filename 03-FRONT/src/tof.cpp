@@ -9,7 +9,8 @@ ToF::ToF()
 }
 void ToF::init()
 {
-    int e = init_tof_sensors();
+    while (init_tof_sensors() == 1)
+        ;
 }
 
 void ToF::getTofValues()
@@ -33,7 +34,6 @@ int ToF::init_tof_sensors()
 
         digitalWrite(tof_pins[i], HIGH);
 
-
         delay(20);
         tof_sensors[i].setTimeout(500);
         if (!tof_sensors[i].init())
@@ -47,7 +47,7 @@ int ToF::init_tof_sensors()
         tof_sensors[i].startContinuous(0);
 
         delay(100);
-        //digitalWrite(tof_pins[i], LOW);
+        // digitalWrite(tof_pins[i], LOW);
     }
     return 0;
 }

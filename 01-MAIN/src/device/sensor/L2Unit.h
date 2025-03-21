@@ -20,6 +20,10 @@ public:
 
     // send message
     void setCameraTarget(int target); // 0=銀、1=緑、2=黒、3=赤
+    void setCameraIdling();
+    void setCameraCW();
+    void setCameraCCW();
+    void setCameraPcontrol();
 
     void ArmDown();
     void ArmUp();

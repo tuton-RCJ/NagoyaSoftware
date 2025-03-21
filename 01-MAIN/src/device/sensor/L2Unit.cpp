@@ -83,36 +83,52 @@ void L2Unit::setCameraTarget(int target)
 {
     _serial->write(target);
 }
-
-void L2Unit::ArmDown()
+void L2Unit::setCameraIdling()
+{
+    _serial->write(4);
+}
+void L2Unit::setCameraCCW()
 {
     _serial->write(5);
 }
-void L2Unit::ArmUp()
+void L2Unit::setCameraCW()
 {
     _serial->write(6);
 }
-void L2Unit::HandOpen()
+void L2Unit::setCameraPcontrol()
 {
     _serial->write(7);
 }
-void L2Unit::HandClose()
-{
-    _serial->write(8);
-}
-void L2Unit::BasketOpen()
+
+void L2Unit::ArmDown()
 {
     _serial->write(9);
 }
-void L2Unit::BasketClose()
+void L2Unit::ArmUp()
 {
     _serial->write(10);
 }
-void L2Unit::AttachHand()
+void L2Unit::HandOpen()
 {
     _serial->write(11);
 }
-void L2Unit::DetachHand()
+void L2Unit::HandClose()
 {
     _serial->write(12);
+}
+void L2Unit::BasketOpen()
+{
+    _serial->write(13);
+}
+void L2Unit::BasketClose()
+{
+    _serial->write(14);
+}
+void L2Unit::AttachHand()
+{
+    _serial->write(15);
+}
+void L2Unit::DetachHand()
+{
+    _serial->write(16);
 }

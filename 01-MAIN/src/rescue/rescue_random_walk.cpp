@@ -41,6 +41,7 @@ extern bool EntranceWallRight; // 入口の右側に壁があるかどうか
 /// @brief ランダムな位置に移動する
 void GoRandomPosition()
 {
+    sts3032.turn(30, 90);
     sts3032.drive(30, 100);
     while (!(front.read() && front.values[2] > 300))
         ;
