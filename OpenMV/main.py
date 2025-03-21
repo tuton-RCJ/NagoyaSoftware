@@ -24,12 +24,12 @@ direction = -1
 # 露光時間 (ms)
 silver_exposure = 4000
 green_exposure = 15000
-black_exposure = 7000
+black_exposure = 20000
 red_exposure = 20000
 # 黒、緑、赤に対する閾値　(L_low,L_hi,A_low,A_hi,B_low,B_hi)
-thre_black = [(0, 20, -10, 10, -20, 10)]
+thre_black = [(0, 60, -10, 10, -10, 10)]
 thre_green = [(0, 90, -40, -10, -20, 20)]
-thre_red = [(50, 80, 20, 50, -10, 30)]
+thre_red = [(40, 60, 50, 70, 10, 60)]
 #　FOMO モデルの設定もろもろ
 min_confidence = 0.3
 threshold_list = [(math.ceil(min_confidence * 255), 255)]
@@ -183,7 +183,7 @@ def detect_black():
 			for val_obj in obj:
 				img.draw_circle(val_obj[:3],colors[3])
 				max_size = max(val_obj.r(),max_size)
-			if img.get_statistics(roi=(o[0],o[1],o[2],o[3])).lq() < 40 and  (max_size*2 / (o[2]+o[3]) > 0.35):
+			if img.get_statistics(roi=(o[0],o[1],o[2],o[3])).lq() < 100 and  (max_size*2 / (o[2]+o[3]) > 0.35):
 				img.draw_rectangle(o[:4],colors[4])
 				result.append((o[0]+o[2]//2,o[1]+o[3]//2))
 	return result,img
