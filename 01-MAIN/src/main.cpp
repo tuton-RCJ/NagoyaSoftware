@@ -21,69 +21,48 @@ ToF tof(PA6, PA5);
 BNO055 bno(55, &Wire);
 
 L2Unit l2unit(&uart5);
+Front front(&uart4);
 
 volatile bool isRescue;
 
 extern void LineSetup();
 extern void LineLoop();
-void RescueSetup();
-void RescueLoop();
+extern void RescueSetup();
+extern void RescueLoop();
 
 void init_i2c();
 void Flush();
 
 void setup()
 {
+  uart1.begin(115200);
 
-  // init UART (others are initialized in their own classes)
-  uart1.begin(115200); // USB for debug
-  // uart4.begin(115200); // PWR send servo command and receive tof sensor data
-  uart6.begin(115200);
-
-  // // init I2C sensors
+  // init I2C sensors
   init_i2c();
   tof.init();
   bno.begin();
-  Front::init(&uart4);
 
   sts3032.isDisabled = false;
   buzzer.isDisabled = false;
-  // sts3032.turn(50, 45);
   sts3032.stop();
 
-  // LineSetup();
-  line.init();
-  line.setBrightness(80);
+  LineSetup();
   buzzer.boot();
 }
 
 void loop()
 {
-  // tof.read();
-  // tof.print(&uart1);
-  // return;
-  // l2unit.read();
-  // l2unit.print(&uart1);
-  // return;
-  // line.read();
-  // line.print(&uart1);
-  // return;
-
   if (!isRescue)
   {
     LineLoop();
     if (isRescue)
-    {
       RescueSetup();
-    }
   }
   else
   {
     RescueLoop();
     if (!isRescue)
-    {
       LineSetup();
-    }
   }
 }
 
@@ -94,18 +73,9 @@ void init_i2c()
   Wire.begin();
 }
 
-void RescueSetup()
-{
-  sts3032.stop();
-}
-
-void RescueLoop()
-{
-  sts3032.stop();
-}
-
 void Flush()
 {
   line.Flush();
   l2unit.Flush();
+  front.Flush();
 }

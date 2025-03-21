@@ -15,7 +15,7 @@ void ToF::getTofValues()
 {
     for (int i = 0; i < 2; i++)
     {
-        tof_values[i] = tof_sensors[i].readRangeContinuousMillimeters();
+        values[i] = tof_sensors[i].readRangeContinuousMillimeters();
     }
 }
 
@@ -48,8 +48,8 @@ int ToF::init_tof_sensors()
 void ToF::print(HardwareSerial *serial)
 {
     serial->print("L: ");
-    serial->print(tof_values[0]);
+    serial->print(values[0]);
     serial->print(" R: ");
-    serial->print(tof_values[1]);
+    serial->print(values[1]);
     serial->println();
 }

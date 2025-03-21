@@ -13,6 +13,7 @@ void L2Unit::init()
     {
         tof_values[i] = 0;
         loadcell_values[i] = 0;
+        loadcell_detected[i] = false;
     }
     Flush();
 }
@@ -25,14 +26,14 @@ void L2Unit::Flush()
     }
 }
 
-int L2Unit::read()
+bool L2Unit::read()
 {
     if (_serial->available() < receiveSize + 1)
     {
-        return 1;
+        return false;
     }
 
-    if (_serial->read() == 0)
+    if (_serial->read() == 255)
     {
         for (int i = 0; i < 2; i++)
         {
@@ -43,12 +44,18 @@ int L2Unit::read()
         for (int i = 0; i < 2; i++)
         {
             loadcell_values[i] = _serial->read();
+            loadcell_detected[i] = loadcell_values[i] > loadcell_threshold[i];
+        }
+        OpenMVData = _serial->read();
+        if (OpenMVData == 254)
+        {
+            OpenMVData = 255;
         }
     }
 
     Flush();
 
-    return 0;
+    return true;
 }
 
 void L2Unit::print(HardwareSerial *serial)
@@ -67,5 +74,45 @@ void L2Unit::print(HardwareSerial *serial)
         serial->print(loadcell_values[i]);
         serial->print(" ");
     }
+    serial->print("OpenMV: ");
+    serial->print(OpenMVData);
     serial->println();
+}
+
+void L2Unit::setCameraTarget(int target)
+{
+    _serial->write(target);
+}
+
+void L2Unit::ArmDown()
+{
+    _serial->write(5);
+}
+void L2Unit::ArmUp()
+{
+    _serial->write(6);
+}
+void L2Unit::HandOpen()
+{
+    _serial->write(7);
+}
+void L2Unit::HandClose()
+{
+    _serial->write(8);
+}
+void L2Unit::BasketOpen()
+{
+    _serial->write(9);
+}
+void L2Unit::BasketClose()
+{
+    _serial->write(10);
+}
+void L2Unit::AttachHand()
+{
+    _serial->write(11);
+}
+void L2Unit::DetachHand()
+{
+    _serial->write(12);
 }

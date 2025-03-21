@@ -1,29 +1,46 @@
 #include "front.h"
-uint16_t Front::values[5];  // 静的配列の定義
-HardwareSerial* Front::serial = nullptr;  // HardwareSerial ポインタの定義
-PacketSerial Front::packetSerial;  // PacketSerial のインスタンスの定義
-void Front::init(HardwareSerial *serial)
+Front::Front(HardwareSerial *serial)
 {
-    Front::serial = serial;
-    serial->begin(115200);
-    packetSerial.setStream(serial);
-    packetSerial.setPacketHandler(Front::OnPacketReceived);
-    for(int i = 0; i < NUM_VALUES; i++)
+    _serial = serial;
+    _serial->begin(115200);
+    init();
+}
+
+void Front::init()
+{
+    for (int i = 0; i < NUM_VALUES; i++)
     {
         values[i] = 0;
     }
-}
-void Front::update()
-{
-    packetSerial.update();
+    Flush();
 }
 
-void Front::OnPacketReceived(const uint8_t *buffer, size_t size)
+void Front::Flush()
 {
-    if (size == NUM_VALUES * sizeof(uint16_t))
+    while (_serial->available())
     {
-        memcpy(values, buffer, size);
+        _serial->read();
     }
+}
+
+bool Front::read()
+{
+    if (_serial->available() < receiveSize + 1)
+    {
+        return false;
+    }
+
+    if (_serial->read() == 255)
+    {
+        for (int i = 0; i < NUM_VALUES; i++)
+        {
+            values[i] = _serial->read() << 8;
+            values[i] |= _serial->read();
+        }
+    }
+    Flush();
+
+    return true;
 }
 
 void Front::print(HardwareSerial *printSerial)
