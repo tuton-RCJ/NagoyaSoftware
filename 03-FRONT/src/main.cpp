@@ -20,7 +20,7 @@ void setup()
     Wire.setSCL(D5);
     Wire.setSDA(D4);
     Wire.begin();
-
+    
     delay(300);
     tof.init();
 
@@ -32,19 +32,21 @@ void setup()
         pixels.show();
         delay(100);
     }
+
     for (int i = 0; i < NUMPIXELS; i++)
     {
         pixels.setPixelColor(i, pixels.Color(0, 0, 0));
         pixels.show();
         delay(100);
     }
+
     // Serial.println("Hello World");
 }
 
 void loop()
 {
     tof.getTofValues();
-    // tof.print(&Serial);
+    tof.print(&Serial);
     Serial1.write(255);
     for (int i = 0; i < 5; i++)
     {

@@ -217,7 +217,7 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
         // 進む
         sts3032.straight(30, 80);
         l2unit.HandClose();
-        delay(300);
+        delay(600);
         l2unit.ArmUp();
         delay(600);
         l2unit.DetachHand();

@@ -13,6 +13,7 @@ public:
     uint16_t tof_values[5];
     void getTofValues();
     void print(HardwareSerial *serial);
+    void i2c_scanner();
 
 private:
     int tof_pins[5] = {D0, D1, D2, D3, D8};

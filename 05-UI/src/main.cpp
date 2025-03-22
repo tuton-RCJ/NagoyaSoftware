@@ -4,6 +4,7 @@
 #include "logo.h"
 #include "line_btn.h"
 #include <XPT2046_Touchscreen.h>
+#include "StatusImage.h"
 
 TFT_eSPI tft = TFT_eSPI(); // TFT インスタンスを作成
 
@@ -25,6 +26,7 @@ void setup()
 {
 
   Serial.begin(9600);
+  Serial1.begin(115200);
   pixels.begin(); // This initializes the NeoPixel library.
   pixels.setBrightness(50);
 
@@ -45,7 +47,7 @@ void setup()
   }
   delay(1000);
 
-  MovePage(0);
+  // MovePage(0);
 
   // // 文字の設定
   // tft.setTextColor(TFT_WHITE, TFT_RED); // 白文字、赤背景
@@ -56,42 +58,60 @@ void setup()
 
 void loop()
 {
-  int touchX, touchY;
-  if (ts.touched())
+  // int touchX, touchY;
+  // if (ts.touched())
+  // {
+  //   TS_Point p = ts.getPoint();
+  //   touchX = map(p.x, 0, 4095, 0, 320);
+  //   touchY = map(p.y, 0, 4095, 0, 240);
+  //   Serial.print(touchX);
+  //   Serial.print(",");
+  //   Serial.println(touchY);
+  //   if (touchX > 200 && touchY > 100)
+  //   {
+  //     MovePage(1);
+  //   }
+  //   if (touchX < 200 && touchX > 100 && touchY > 100)
+  //   {
+  //     MovePage(2);
+  //   }
+  //   if (touchX < 100 && touchY > 100)
+  //   {
+  //     MovePage(3);
+  //   }
+  //   if (touchX > 200 && touchY < 100)
+  //   {
+  //     MovePage(4);
+  //   }
+  //   if (touchX < 200 && touchX > 100 && touchY < 100)
+  //   {
+  //     MovePage(5);
+  //   }
+  //   if (touchX < 100 && touchY < 100)
+  //   {
+  //     MovePage(6);
+  //   }
+  //   delay(1000);
+  //   MovePage(0);
+  // }
+
+  if (Serial1.available())
   {
-    TS_Point p = ts.getPoint();
-    touchX = map(p.x, 0, 4095, 0, 320);
-    touchY = map(p.y, 0, 4095, 0, 240);
-    Serial.print(touchX);
-    Serial.print(",");
-    Serial.println(touchY);
-    if (touchX > 200 && touchY > 100)
-    {
-      MovePage(1);
+    byte data = Serial1.read();
+    if (data == 20){
+      drawRGB565Image(0, 0, 320, 240, SilverDetecting);
     }
-    if (touchX < 200 && touchX > 100 && touchY > 100)
-    {
-      MovePage(2);
+    if (data == 21){
+      drawRGB565Image(0, 0, 320, 240, GreenDetecting);
     }
-    if (touchX < 100 && touchY > 100)
-    {
-      MovePage(3);
+    if (data == 22){
+      drawRGB565Image(0, 0, 320, 240, BlackDetecting);
     }
-    if (touchX > 200 && touchY < 100)
-    {
-      MovePage(4);
+    if (data == 23){
+      drawRGB565Image(0, 0, 320, 240, RedDetecting);
     }
-    if (touchX < 200 && touchX > 100 && touchY < 100)
-    {
-      MovePage(5);
-    }
-    if (touchX < 100 && touchY < 100)
-    {
-      MovePage(6);
-    }
-    delay(1000);
-    MovePage(0);
   }
+
   // Serial.println("Hello World");
   // for (int i = 0; i < NUMPIXELS; i++)
   // {
@@ -162,7 +182,8 @@ void MovePage(int nextPage)
     drawRGB565Image(215, 34, 100, 100, line_btn);
     drawRGB565Image(215, 136, 100, 100, line_btn);
   }
-  else{
+  else
+  {
     tft.fillScreen(TFT_WHITE);
     tft.setCursor(10, 10);
     tft.setTextSize(2);

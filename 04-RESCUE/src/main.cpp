@@ -102,7 +102,7 @@ void ArmDown()
 void ArmUp()
 {
   AttachArm();
-  ArmL.write(80);
+  ArmL.write(70);
   ArmR.write(112);
   delay(300);
   DetachArm();
@@ -159,8 +159,9 @@ void loop()
     else if (c == 8)
     {
       // readStringしてそのままUI基板に垂れ流す。
+      uart4.println(serial.readStringUntil('\n'));
     }
-    else
+    else if (c < 17)
     {
       // サーボモータを動かす処理を書く
       if (c == 9)
@@ -196,5 +197,9 @@ void loop()
         DetachHand();
       }
     }
+  }
+  else
+  {
+    uart4.write(uart3.read());
   }
 }
