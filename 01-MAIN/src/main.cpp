@@ -29,7 +29,7 @@ extern void LineSetup();
 extern void LineLoop();
 extern void RescueSetup();
 extern void RescueLoop();
-
+extern int GetFrontObject();
 void init_i2c();
 void Flush();
 
@@ -52,6 +52,7 @@ void setup()
 
 void loop()
 {
+
   if (!isRescue)
   {
     LineLoop();

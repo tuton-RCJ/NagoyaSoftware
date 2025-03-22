@@ -69,14 +69,14 @@ void DetachBasket()
 void BasketOpen()
 {
   AttachBasket();
-  basket.write(80);
+  basket.write(110);
   delay(500);
   DetachBasket();
 }
 void BasketClose()
 {
   AttachBasket();
-  basket.write(90);
+  basket.write(40);
   delay(500);
   DetachBasket();
 }
@@ -127,6 +127,7 @@ void setup()
 
 void loop()
 {
+
   // データとる
   tof.getTofValues();
   loadcell.read();
@@ -150,47 +151,47 @@ void loop()
   if (serial.available())
   {
     byte c = serial.read();
-    if (c < 4)
+    if (c < 8)
     {
       uart3.write(c);
       OpenMVData = 255;
     }
-    else if (c == 4)
+    else if (c == 8)
     {
       // readStringしてそのままUI基板に垂れ流す。
     }
     else
     {
       // サーボモータを動かす処理を書く
-      if (c == 5)
+      if (c == 9)
       {
         ArmDown();
       }
-      else if (c == 6)
+      else if (c == 10)
       {
         ArmUp();
       }
-      else if (c == 7)
+      else if (c == 11)
       {
         HandOpen();
       }
-      else if (c == 8)
+      else if (c == 12)
       {
         HandClose();
       }
-      else if (c == 9)
+      else if (c == 13)
       {
         BasketOpen();
       }
-      else if (c == 10)
+      else if (c == 14)
       {
         BasketClose();
       }
-      else if (c == 11)
+      else if (c == 15)
       {
         AttachHand();
       }
-      else if (c == 12)
+      else if (c == 16)
       {
         DetachHand();
       }

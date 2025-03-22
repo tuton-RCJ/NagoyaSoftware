@@ -266,7 +266,7 @@ void TurnObject()
 
 void setSlopeStatus()
 {
-  bno.readEulerAngles();
+  bno.read();
   if (bno.pitch > 8)
   {
     SlopeStatus = 1;

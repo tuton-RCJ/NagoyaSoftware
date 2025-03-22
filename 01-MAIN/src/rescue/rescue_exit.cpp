@@ -23,12 +23,14 @@ extern int GetFrontObject();
 void ExitSetup();
 bool ExitLoop();
 
+void DriveUntilWall();
+
 void ExitSetup()
 {
     sts3032.stop();
-    sts3032.turn(50, -90); // 時計回りにまわる準備。
+    sts3032.turn(30, -90);
+    Flush();
 }
-
 
 /// @brief ラインを読み取る。
 /// @return 0=白、1=黒、2=銀
@@ -58,13 +60,13 @@ bool ExitLoop()
     tof.read();
 
     // 左に壁がある場合、ラインを見て入口/出口を判断。
-    if (tof.values[0] > 150)
+    if (tof.values[0] > 180)
     {
         sts3032.straight(50, 100);
         sts3032.turn(50, -90);
         unsigned long start = millis();
-        sts3032.drive(30, 0);
-        while (millis() - start < 2000)
+        sts3032.drive(20, 0);
+        while (millis() - start < 4000)
         {
             if (ReadLine() == 1) // 黒を読んだ。脱出！！
             {
@@ -77,16 +79,15 @@ bool ExitLoop()
                 sts3032.stop();
                 sts3032.straight(30, -50);
                 sts3032.turn(50, 90);
+                delay(500);
+                Flush();
                 if (GetFrontObject() < 200) // 前方が壁。
                 {
-                    // 前50mmまで進む。
-                    while (GetFrontObject() < 50)
-                    {
-                        sts3032.drive(30, 0);
-                    }
-                    sts3032.stop();
+                    DriveUntilWall();
                     // 90度右に回る。
                     sts3032.turn(40, 90);
+                    sts3032.stop();
+                    delay(1000);
                     return false;
                 }
                 sts3032.straight(50, 200);
@@ -94,17 +95,27 @@ bool ExitLoop()
             }
         }
         sts3032.stop();
-        sts3032.straight(30, -150);
+        sts3032.straight(30, -200);
         sts3032.turn(50, 90);
+        delay(500);
+        Flush();
+        if (GetFrontObject() < 200) // 前方が壁。
+        {
+            DriveUntilWall();
+            // 90度右に回る。
+            sts3032.turn(40, 90);
+            sts3032.stop();
+            delay(1000);
+            return false;
+        }
+        sts3032.straight(50, 200);
         return false;
     }
     else
     {
-        tof.read();
 
         // 定数制御にするか、比例制御にするかはあなた次第。
-        // sts3032.drive(50, 0);
-        sts3032.drive(50, -(tof.values[0] - 50)); // 値は適当。要調整。
+        sts3032.drive(60, 0);
 
         if (ReadLine() == 1)
         { // 黒を読んだ！脱出！
@@ -120,12 +131,12 @@ bool ExitLoop()
             sts3032.straight(50, 300);
             return false;
         }
-        l2unit.read();
-
+        while (!l2unit.read())
+            ;
         // バンパーが反応した時。
         if (l2unit.loadcell_detected[0] || l2unit.loadcell_detected[1])
         {
-            delay(800);
+            delay(400);
             l2unit.Flush();
             while (!l2unit.read())
                 ;
@@ -140,13 +151,29 @@ bool ExitLoop()
             {
                 // 45度。避難所。これで上手くいかなかったら、両方反応するまで壁に押し当てて90度回転するようにする。
                 sts3032.stop();
-                sts3032.turn(50, 45);
+                sts3032.drive(50, -40);
+                delay(1000);
+                sts3032.drive(30, 30);
+                delay(500);
+                sts3032.stop();
+                sts3032.straight(30, -30);
+                sts3032.turn(50, 90);
                 return false;
             }
             else
             {
+                return false;
                 // これは！！！障害物です！！！どうしましょうね。
             }
         }
     }
+}
+
+void DriveUntilWall()
+{
+    sts3032.drive(40, 0);
+    while (!(l2unit.read() && l2unit.loadcell_detected[0] && l2unit.loadcell_detected[1]))
+        ;
+    delay(500);
+    sts3032.stop();
 }
