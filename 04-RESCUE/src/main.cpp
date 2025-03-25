@@ -102,8 +102,8 @@ void ArmDown()
 void ArmUp()
 {
   AttachArm();
-  ArmL.write(80);
-  ArmR.write(112);
+  ArmL.write(62);
+  ArmR.write(120);
   delay(300);
   DetachArm();
 }
@@ -123,11 +123,12 @@ void setup()
   DetachHand();
   BasketClose();
   OpenMVData = 255;
+  pinMode(PB12, INPUT);
+  pinMode(PC15, INPUT);
 }
 
 void loop()
 {
-
   // データとる
   tof.getTofValues();
   loadcell.read();
@@ -136,7 +137,6 @@ void loop()
   {
     OpenMVData = uart3.read();
   }
-
   // 送る
   serial.write(255); // ヘッダー255
   serial.write(tof.values[0] >> 8);
@@ -146,6 +146,8 @@ void loop()
   serial.write(min(loadcell.raw_values[0] / 4, 254));
   serial.write(min(loadcell.raw_values[1] / 4, 254));
   serial.write(min(OpenMVData, 254));
+  serial.write(digitalRead(PC15));
+  serial.write(digitalRead(PB12));
 
   // 受け取る
   if (serial.available())
@@ -159,8 +161,9 @@ void loop()
     else if (c == 8)
     {
       // readStringしてそのままUI基板に垂れ流す。
+      uart4.println(serial.readStringUntil('\n'));
     }
-    else
+    else if (c < 17)
     {
       // サーボモータを動かす処理を書く
       if (c == 9)
@@ -195,6 +198,10 @@ void loop()
       {
         DetachHand();
       }
+    }
+    else
+    {
+      uart4.write(uart3.read());
     }
   }
 }

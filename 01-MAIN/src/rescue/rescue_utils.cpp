@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include "../device/device.h"
-#define PI 3.14159265358979323846
 
 //---------------------------------------
 // extern modules
@@ -17,8 +16,6 @@ extern L2Unit l2unit;
 extern Front front;
 
 //-----------------------------------------
-
-
 
 //-----------------------------------------
 
@@ -56,7 +53,7 @@ void BallDrop()
 {
     l2unit.BasketOpen();
     delay(500);
-    tremble(3);
+    // tremble(3);
     delay(500);
     l2unit.BasketClose();
     delay(1000);
@@ -74,26 +71,37 @@ int XtoTurnRate(int x)
 /// @param x 0~160 の x 座標
 void Pcontrol(int x)
 {
-    sts3032.drive(30, (midX - x) * PGain);
+    sts3032.drive(40, (midX - x) * PGain);
 }
 
 /// @brief 正面の物体までの距離を取得する
 /// @return ToFセンサの最小値
-int GetFrontObject()
+bool GetFrontObject(int distance)
 {
-    while (!front.read())
-        ;
-    int returnVal = front.values[0];
-    for (int i = 1; i < 5; i++)
+    int _detectedCount = 0;
+    for (int i = 0; i < 5; i++)
     {
-        if (front.values[i] < returnVal)
+        while (!front.read())
+            ;
+        int returnVal = front.values[0];
+        for (int i = 1; i < 5; i++)
         {
-            returnVal = front.values[i];
+            if (front.values[i] < returnVal)
+            {
+                returnVal = front.values[i];
+            }
+        }
+        if (returnVal < distance)
+        {
+            _detectedCount++;
         }
     }
-    return returnVal;
+    if (_detectedCount >= 3)
+    {
+        return true;
+    }
+    return false;
 }
-
 
 void tremble(int times)
 {

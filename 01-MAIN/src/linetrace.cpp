@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "./device/device.h"
+#include "mydef.h"
 
 // communication
 extern HardwareSerial uart1;
@@ -21,13 +22,13 @@ extern bool isRescue;
 // ライントレース PID用に変数を用意しているがP制御しかしていない
 int Kps[15] = {-7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7}; // 外側のゲインを大きくするための係数
 
-int Kp = 15;
-int Kd = 0;
+int Kp = 15; // 12
+int Kd = 0;  // 10
 int Ki = 0;
 int lastError = 0;
 int sumError = 0;           // 積分値
 int speed;                  // 走行スピード
-const int normalSpeed = 40; // 通常時のスピード
+const int normalSpeed = 30; // 通常時のスピード
 void LineTrace();           // フォトリフレクタの値を読みライントレース。銀を検知すればレスキューモードに移行
 void CheckRed();            // 赤テープ検知
 void CheckGreen();          // 緑マーカー検知
@@ -36,6 +37,7 @@ void CheckGreen();          // 緑マーカー検知
 void CheckObject(); // ライントレース中、障害物があるか確かめる
 bool TurningObject; // 障害物回避中モード
 void TurnObject();  // 障害物回避中の処理
+bool checkBlackLine(bool isLeft);
 
 // ジャイロの値を読んで坂検知
 void setSlopeStatus();
@@ -51,12 +53,11 @@ void LineSetup()
   // servo.initPos();
   line.init();
   line.setBrightness(80);
+  Flush();
 }
 
 void LineLoop()
 {
-  line.read();
-  l2unit.read();
 
   if (TurningObject)
   {
@@ -64,7 +65,10 @@ void LineLoop()
     TurnObject();
     return;
   }
-
+  if (!line.read())
+  {
+    return;
+  }
   LineTrace();
   if (isRescue)
     return;
@@ -72,7 +76,10 @@ void LineLoop()
   CheckRed();
   CheckGreen();
   setSlopeStatus();
-  CheckObject();
+  if (l2unit.read())
+  {
+    CheckObject();
+  }
 }
 
 void LineTrace()
@@ -122,7 +129,7 @@ void LineTrace()
   }
 
   // トの字判定。前方に黒があり、外側のセンサーが反応している場合。直角をトの字と誤検知することがあるのでスピードを落としている。
-  if (abs(black_sum) > 20 && line.frontPhotoReflector==1)
+  if (abs(black_sum) > 20 && line.frontPhotoReflector == 1)
   {
     error = 0;
     speed = 20;
@@ -185,6 +192,11 @@ void CheckGreen()
       {
         MoveToFront = 100;
       }
+      else if (SlopeStatus == 2)
+      {
+        MoveToFront = 20;
+      }
+
       if (p == 1)
       {
         sts3032.straight(40, MoveToFront);
@@ -193,6 +205,10 @@ void CheckGreen()
         // sts3032.drive(50, -85);
         // delay(1000);
         sts3032.stop();
+        if (SlopeStatus == 3)
+        {
+          sts3032.straight(30, 50);
+        }
       }
       if (p == 2)
       {
@@ -201,10 +217,30 @@ void CheckGreen()
         // sts3032.drive(50, 85);
         // delay(1000);
         sts3032.stop();
+        if (SlopeStatus == 4)
+        {
+          sts3032.straight(30, 50);
+        }
       }
       if (p == 3)
       {
-        sts3032.turn(50, 180);
+        if (SlopeStatus == 3)
+        {
+          sts3032.turn(30, 90);
+          sts3032.straight(50, -50);
+          sts3032.turn(30, 90);
+        }
+        else if (SlopeStatus == 4)
+        {
+          sts3032.turn(30, 90);
+          sts3032.straight(50, 50);
+          sts3032.turn(30, 90);
+        }
+        else
+        {
+          sts3032.turn(50, 180);
+        }
+
         sts3032.stop();
       }
       Flush();
@@ -219,7 +255,8 @@ void CheckObject()
     sts3032.stop();
     buzzer.ObjectDetected();
     sts3032.straight(50, -20);
-    sts3032.turn(50, 90);
+    sts3032.turn(50, 80 * ObjectTurnDirection);
+
     sts3032.straight(50, 30);
     TurningObject = true;
     Flush();
@@ -228,37 +265,57 @@ void CheckObject()
 
 void TurnObject()
 {
-  if (tof.values[0] < 50)
+  bool blackFlag = false;
+
+  if (tof.values[0] < 80)
   {
-    buzzer.beep(440, 0.5);
-    sts3032.drive(30, 0);
-  }
-  else if (tof.values[0] > 200)
-  {
-    sts3032.turn(30, -40);
-    sts3032.straight(30, 40);
+    // buzzer.beep(440, 0.5);
+    if (tof.values[0] < 50)
+    {
+      sts3032.drive(30, 45 * ObjectTurnDirection);
+    }
+    else if (tof.values[0] < 70)
+    {
+      sts3032.drive(30, 0);
+    }
+    else
+    {
+      sts3032.drive(30, -30 * ObjectTurnDirection);
+    }
+    while (!line.read())
+      ;
+    for (int i = 0; i < 6; i++)
+    {
+      if (line.photoReflector[i] == 1)
+      {
+        blackFlag = true;
+      }
+    }
   }
   else
   {
-    buzzer.beep(880, 0.5);
-
-    sts3032.drive(30, -55);
-  }
-  bool blackFlag = false;
-  for (int i = 0; i < 5; i++)
-  {
-    if (line.photoReflector[i]==1)
+    // buzzer.beep(880, 0.5);
+    sts3032.turn(30, -30 * ObjectTurnDirection);
+    unsigned long _start = millis();
+    sts3032.drive(30, 0);
+    while (millis() - _start < 900)
     {
-      blackFlag = true;
+      if (checkBlackLine(ObjectTurnDirection == 1))
+      {
+        blackFlag = true;
+        break;
+      }
     }
   }
+
   if (blackFlag)
   {
     sts3032.stop();
     buzzer.ObjectDetected();
     sts3032.straight(50, 30);
-    sts3032.turn(50, 80);
+    sts3032.turn(50, 80 * ObjectTurnDirection);
     sts3032.straight(50, -60);
+    sts3032.stop();
     TurningObject = false;
   }
   Flush();
@@ -267,16 +324,53 @@ void TurnObject()
 void setSlopeStatus()
 {
   bno.read();
-  if (bno.pitch > 8)
+  if (bno.pitch > 10)
   {
-    SlopeStatus = 1;
+    SlopeStatus = 1; // 上り
   }
-  else if (bno.pitch < -8)
+  else if (bno.pitch < -10)
   {
-    SlopeStatus = 2;
+    SlopeStatus = 2; // 下り
+  }
+  else if (bno.roll > 10)
+  {
+    SlopeStatus = 3; // 右に傾いている
+  }
+  else if (bno.roll < -10)
+  {
+    SlopeStatus = 4; // 左に傾いている
   }
   else
   {
     SlopeStatus = 0;
   }
+}
+
+bool checkBlackLine(bool isLeft)
+{
+  if (!line.read())
+  {
+    return false;
+  }
+  if (isLeft)
+  {
+    for (int i = 0; i < 7; i++)
+    {
+      if (line.photoReflector[i] == 1)
+      {
+        return true;
+      }
+    }
+  }
+  else
+  {
+    for (int i = 8; i < 15; i++)
+    {
+      if (line.photoReflector[i] == 1)
+      {
+        return true;
+      }
+    }
+  }
+  return false;
 }
