@@ -23,13 +23,13 @@ is_debug = True
 direction = -1
 # 露光時間 (ms)
 silver_exposure = 4000
-green_exposure = 15000
+green_exposure = 25000
 black_exposure = 15000
 red_exposure = 20000
 # 黒、緑、赤に対する閾値　(L_low,L_hi,A_low,A_hi,B_low,B_hi)
-thre_black = [(30, 70, -15, 10, -10, 25)]
+thre_black = [(10,50,-10,5,-20,0)]
 thre_green = [(0, 90, -40, -10, -20, 20)]
-thre_red = [(40, 60, 35, 70, 10, 60)]
+thre_red = [(30, 80, 20, 70, -10, 40)]
 #　FOMO モデルの設定もろもろ
 min_confidence = 0.8
 threshold_list = [(math.ceil(min_confidence * 255), 255)]
@@ -93,7 +93,7 @@ def debug_print(value):
 
 # dbscan
 def dbscan(points,min_pts = 3):
-	eps = 40	  # eps: この距離以下なら近傍とみなす
+	eps = 80	  # eps: この距離以下なら近傍とみなす
 	n = len(points)
 	visited = [False] * n
 	labels = [None] * n
@@ -136,13 +136,14 @@ def dbscan(points,min_pts = 3):
 				if labels[j] is None:
 					labels[j] = cluster_id
 	clusters_xmax = {}
-	mod_t = (5 if direction == 3 else 10)
+	mod_t = (5 if direction == 0 else 10)
+	
 	for idx, lab in enumerate(labels):
 		if lab not in clusters_xmax:
 			clusters_xmax[lab] = points[idx]
 		t1, x1, y1 = bit_tie(points[idx])
 		t2, x2, y2 = bit_tie(clusters_xmax[lab])
-		if (t1-frame_cnt)%mod_t < (t2-frame_cnt)%mod_t:
+		if ((t1-frame_cnt-1)%mod_t > (t2-frame_cnt-1)%mod_t) :
 			clusters_xmax[lab] = points[idx]
 	return clusters_xmax
 
@@ -150,7 +151,7 @@ def dbscan(points,min_pts = 3):
 def detect_silver():
 	while sensor.get_exposure_us() != silver_exposure:
 		sensor.set_auto_exposure(False,exposure_us=silver_exposure)
-	img = sensor.snapshot().lens_corr(1.8)
+	img = sensor.snapshot().lens_corr(1.4)
 	result = []
 	for i, detection_list in enumerate(model.predict([img], callback=fomo_post_process)):
 		if i == 0:
@@ -169,9 +170,9 @@ def detect_silver():
 def detect_green():
 	while sensor.get_exposure_us() != green_exposure:
 		sensor.set_auto_exposure(False,exposure_us=green_exposure)
-	img = sensor.snapshot().lens_corr(1.8)
+	img = sensor.snapshot().lens_corr(1.4)
 	result = []
-	for obj in img.find_blobs(thre_green,area_threshold=400,merge=True):
+	for obj in img.find_blobs(thre_green,area_threshold=300,merge=True,x_stride=1):
 		img.draw_rectangle(obj[:4],colors[1])
 		result.append(bit_tuple(frame_cnt,obj[0]+obj[2]//2,obj[1]+obj[3]//2))
 	return result,img
@@ -180,15 +181,16 @@ def detect_green():
 def detect_black():
 	while sensor.get_exposure_us() != black_exposure:
 		sensor.set_auto_exposure(False,exposure_us=black_exposure)
-	img = sensor.snapshot().lens_corr(1.8)
+	img = sensor.snapshot().lens_corr(1.4)
+	img.histeq(adaptive=True,clip_limit=5)
+	img.gaussian(1)
 	result = []
-	for o in img.find_blobs(thre_black,area_threshold=80):
+	for o in img.find_blobs(thre_black,pixel_threshold=40,x_stride=1,merge=True,margin=20):
 		img.draw_rectangle(o[:4],colors[2])
 		if o[2]+o[3] > 100:
 			continue
-		if abs(o[2]-o[3]) <= 4:
-			img.to_grayscale()
-			if  100 < img.get_statistics(roi=(o[0],o[1],o[2],o[3])).mean() < 160 and o.roundness() > 0.60:
+		if abs(o[2]-o[3]) < 6:
+			if  (30 < img.get_statistics(roi=(o[0],o[1],o[2],o[3])).mean() < 60) and o.roundness() > 0.30:
 				img.draw_rectangle(o[:4],colors[4])
 				result.append(bit_tuple(frame_cnt,o[0]+o[2]//2,o[1]+o[3]//2))
 			print(img.get_statistics(roi=(o[0],o[1],o[2],o[3])).mean(), o.roundness())
@@ -199,9 +201,9 @@ def detect_red():
 	while sensor.get_exposure_us() != red_exposure:
 		sensor.set_auto_exposure(False,exposure_us=red_exposure)
 	clock.tick()
-	img = sensor.snapshot().lens_corr(1.8)
+	img = sensor.snapshot().lens_corr(1.4)
 	result = []
-	for obj in img.find_blobs(thre_red,area_threshold=400,merge=True):
+	for obj in img.find_blobs(thre_red,area_threshold=300,merge=True,x_stride=1,margin=40):
 		result.append(bit_tuple(frame_cnt,obj[0]+obj[2]//2,obj[1]+obj[3]//2))
 		img.draw_rectangle(obj[:4],color=colors[5])
 	return result,img
@@ -212,7 +214,7 @@ def process_points(points,different_flag,direction):
 	if different_flag:
 		old_points = deque([],100)
 		all_points = []
-	if len(old_points) >= (5 if direction == 0 else 10):
+	if len(old_points) > (4 if direction == 0 else 9):
 		del_points = old_points.popleft()
 		for p in del_points:
 			all_points.remove(p)
@@ -253,6 +255,7 @@ while True:
 		t, x, y = bit_tie(r)
 		min_x = min(x,min_x)
 		img.draw_line(x,0,x,120,color=colors[4])
+	print(min_x)
 	send(min_x)
 	print(res)
 	uart.flush()
