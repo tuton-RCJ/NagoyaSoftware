@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "../device/device.h"
-#define PI 3.14159265358979323846
+#include "mydef.h"
+
+#define SerchTurnDirection 1 // 0:左, 1:右
 
 //---------------------------------------
 // extern modules
@@ -23,7 +25,7 @@ extern void Flush();
 extern void GoRandomPosition();
 extern void Pcontrol(int x);
 extern int XtoTurnRate(int x);
-extern int GetFrontObject();
+extern bool GetFrontObject(int distance);
 extern void Kabeyoke(bool isWallleft);
 extern void BallDrop();
 extern void tremble(int times);
@@ -82,6 +84,7 @@ void RescueLoop()
             l2unit.setCameraTarget(2);
             l2unit.setCameraCW();
             buzzer.DetectedBlackBall();
+            bno.setZero();
             if (status == 2)
             {
                 ExitSetup();
@@ -93,7 +96,7 @@ void RescueLoop()
         if (ExitLoop())
         {
             isRescue = false;
-            buzzer.kouka();
+            //buzzer.kouka();
             return;
         }
     }
@@ -131,11 +134,19 @@ bool DetectVictim(int target)
     bno.read();
     if (isFrontCorner && bno.direction > 180)
     {
-        sts3032.drive(50, 100);
+        sts3032.drive(80, 100*SerchTurnDirection);
     }
     else if (l2unit.read() && l2unit.OpenMVData > 20 && l2unit.OpenMVData < 140)
     {
         sts3032.stop();
+        unsigned long start = millis();
+        while (!(l2unit.read() && l2unit.OpenMVData != 255))
+        {
+            if (millis() - start >= 200)
+            {
+                return true;
+            }
+        }
         if (target == 0)
         {
             buzzer.DetectedSilverBall();
@@ -147,10 +158,6 @@ bool DetectVictim(int target)
         VictimDetected = true;
         TurnedHalf = false;
         TurnedOnce = false;
-        l2unit.setCameraIdling();
-        delay(1000);
-        while (!(l2unit.read() && l2unit.OpenMVData != 255))
-            ;
         sts3032.turn(50, XtoTurnRate(l2unit.OpenMVData));
         l2unit.setCameraPcontrol();
         Flush();
@@ -159,7 +166,7 @@ bool DetectVictim(int target)
     }
     else
     {
-        sts3032.drive(30, 100);
+        sts3032.drive(30, 100*SerchTurnDirection);
     }
 
     if (bno.direction > 160 && bno.direction < 200)
@@ -178,8 +185,8 @@ bool DetectVictim(int target)
         else
         {
             sts3032.stop();
-            sts3032.turn(50, 90);
-            sts3032.straight(50, 400);
+            sts3032.turn(70, 90*SerchTurnDirection);
+            sts3032.straight(80, 400);
             isFrontCorner = false;
             TurnedOnce = true;
             return true;
@@ -193,19 +200,12 @@ bool DetectVictim(int target)
 /// @return true
 bool PickUpVictim(int target) // target 0: 銀, 1: 黒
 {
-    int _detectedCount = 0;
-    for (int i = 0; i < 5; i++)
-    {
-        if (GetFrontObject() < 50)
-        {
-            _detectedCount++;
-        }
-    }
-    if (_detectedCount >= 3)
+
+    if (GetFrontObject(35))
     {
         sts3032.stop();
         // sts3032.straight(30, 30);
-        sts3032.straight(30, -90); // 下がる
+        sts3032.straight(50, -130); // 下がる
 
         // アームを下す
         l2unit.AttachHand();
@@ -213,16 +213,56 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
         delay(300);
         l2unit.ArmDown();
         delay(600);
-
+        Flush();
         // 進む
-        sts3032.straight(30, 80);
+        sts3032.drive(50, 0);
+        while (true)
+        {
+            bno.read();
+            if (bno.pitch > 8)
+            {
+                sts3032.straight(50, -40);
+            }
+            l2unit.read();
+            if (l2unit.touch[0] && l2unit.touch[1])
+            {
+                sts3032.stop();
+                sts3032.straight(50, -30);
+                sts3032.straight(50, 30);
+                delay(500);
+                sts3032.straight(20, -5);
+                sts3032.stop();
+                break;
+            }
+            else if (l2unit.touch[0])
+            {
+                sts3032.drive(50, -75);
+            }
+            else if (l2unit.touch[1])
+            {
+                sts3032.drive(50, 75);
+            }
+            else
+            {
+                if (GetFrontObject(45))
+                {
+                    sts3032.stop();
+                    break;
+                }
+                sts3032.drive(50, 0);
+            }
+        }
+        sts3032.stop();
+        delay(500);
+
         l2unit.HandClose();
-        delay(600);
+        delay(1200);
+        sts3032.straight(30, -30);
         l2unit.ArmUp();
         delay(600);
         l2unit.DetachHand();
 
-        tremble(3);
+        tremble(2);
 
         HaveVictim = true;
         VictimDetected = false;
@@ -240,7 +280,7 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
         }
         else
         {
-            sts3032.drive(30, 0);
+            sts3032.drive(40, 0);
         }
     }
     return true;
@@ -251,7 +291,7 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
 /// @return true
 bool DetectCorner(int target)
 {
-    sts3032.drive(40, 100);
+    sts3032.drive(40, 100*SerchTurnDirection);
 
     if (l2unit.read() && l2unit.OpenMVData > 70 && l2unit.OpenMVData < 90)
     {
@@ -322,10 +362,10 @@ bool PlaceVictim(int target)
     {
         // 避難所に後ろをつける
         sts3032.stop();
-        sts3032.straight(30, -50);
-        sts3032.turn(50, 180);
-        sts3032.drive(-30, 0);
-        delay(2000);
+        sts3032.straight(60, -50);
+        sts3032.turn(70, 180);
+        sts3032.drive(-60, 0);
+        delay(800);
         sts3032.stop();
 
         // ボールを落とす
@@ -333,13 +373,13 @@ bool PlaceVictim(int target)
 
         HaveVictim = false;
         ZoneDetected = false;
-        sts3032.straight(30, 50);
+        sts3032.straight(60, 50);
 
         Flush();
         isFrontCorner = true;
         if (target == 0)
         {
-            sts3032.turn(30, -90);
+            sts3032.turn(50, -90*SerchTurnDirection);
             if (victimCount >= 2)
             {
                 return false;
@@ -357,17 +397,17 @@ bool PlaceVictim(int target)
         }
     }
     bno.read();
-    if (bno.pitch > 20)
+    if (bno.pitch > 15)
     {
         sts3032.straight(60, -100);
     }
     if (l2unit.loadcell_detected[0])
     {
-        sts3032.drive(60, -30);
+        sts3032.drive(60, -50);
     }
     else if (l2unit.loadcell_detected[1])
     {
-        sts3032.drive(60, 30);
+        sts3032.drive(60, 50);
     }
     else
     {

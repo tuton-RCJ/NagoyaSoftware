@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "./device/device.h"
+#include "mydef.h"
 
 // communication
 extern HardwareSerial uart1;
@@ -52,6 +53,7 @@ void LineSetup()
   // servo.initPos();
   line.init();
   line.setBrightness(80);
+  Flush();
 }
 
 void LineLoop()
@@ -73,7 +75,7 @@ void LineLoop()
 
   CheckRed();
   CheckGreen();
-  // setSlopeStatus();
+  setSlopeStatus();
   if (l2unit.read())
   {
     CheckObject();
@@ -190,6 +192,11 @@ void CheckGreen()
       {
         MoveToFront = 100;
       }
+      else if (SlopeStatus == 2)
+      {
+        MoveToFront = 20;
+      }
+
       if (p == 1)
       {
         sts3032.straight(40, MoveToFront);
@@ -198,6 +205,10 @@ void CheckGreen()
         // sts3032.drive(50, -85);
         // delay(1000);
         sts3032.stop();
+        if (SlopeStatus == 3)
+        {
+          sts3032.straight(30, 50);
+        }
       }
       if (p == 2)
       {
@@ -206,10 +217,30 @@ void CheckGreen()
         // sts3032.drive(50, 85);
         // delay(1000);
         sts3032.stop();
+        if (SlopeStatus == 4)
+        {
+          sts3032.straight(30, 50);
+        }
       }
       if (p == 3)
       {
-        sts3032.turn(50, 180);
+        if (SlopeStatus == 3)
+        {
+          sts3032.turn(30, 90);
+          sts3032.straight(50, -50);
+          sts3032.turn(30, 90);
+        }
+        else if (SlopeStatus == 4)
+        {
+          sts3032.turn(30, 90);
+          sts3032.straight(50, 50);
+          sts3032.turn(30, 90);
+        }
+        else
+        {
+          sts3032.turn(50, 180);
+        }
+
         sts3032.stop();
       }
       Flush();
@@ -224,7 +255,8 @@ void CheckObject()
     sts3032.stop();
     buzzer.ObjectDetected();
     sts3032.straight(50, -20);
-    sts3032.turn(50, 80);
+    sts3032.turn(50, 80 * ObjectTurnDirection);
+
     sts3032.straight(50, 30);
     TurningObject = true;
     Flush();
@@ -240,7 +272,7 @@ void TurnObject()
     // buzzer.beep(440, 0.5);
     if (tof.values[0] < 50)
     {
-      sts3032.drive(30, 45);
+      sts3032.drive(30, 45 * ObjectTurnDirection);
     }
     else if (tof.values[0] < 70)
     {
@@ -248,7 +280,7 @@ void TurnObject()
     }
     else
     {
-      sts3032.drive(30, -30);
+      sts3032.drive(30, -30 * ObjectTurnDirection);
     }
     while (!line.read())
       ;
@@ -263,12 +295,12 @@ void TurnObject()
   else
   {
     // buzzer.beep(880, 0.5);
-    sts3032.turn(30, -30);
+    sts3032.turn(30, -30 * ObjectTurnDirection);
     unsigned long _start = millis();
     sts3032.drive(30, 0);
     while (millis() - _start < 900)
     {
-      if (checkBlackLine(true))
+      if (checkBlackLine(ObjectTurnDirection == 1))
       {
         blackFlag = true;
         break;
@@ -281,7 +313,7 @@ void TurnObject()
     sts3032.stop();
     buzzer.ObjectDetected();
     sts3032.straight(50, 30);
-    sts3032.turn(50, 80);
+    sts3032.turn(50, 80 * ObjectTurnDirection);
     sts3032.straight(50, -60);
     sts3032.stop();
     TurningObject = false;
@@ -292,13 +324,21 @@ void TurnObject()
 void setSlopeStatus()
 {
   bno.read();
-  if (bno.pitch > 8)
+  if (bno.pitch > 10)
   {
-    SlopeStatus = 1;
+    SlopeStatus = 1; // 上り
   }
-  else if (bno.pitch < -8)
+  else if (bno.pitch < -10)
   {
-    SlopeStatus = 2;
+    SlopeStatus = 2; // 下り
+  }
+  else if (bno.roll > 10)
+  {
+    SlopeStatus = 3; // 右に傾いている
+  }
+  else if (bno.roll < -10)
+  {
+    SlopeStatus = 4; // 左に傾いている
   }
   else
   {

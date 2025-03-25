@@ -51,6 +51,11 @@ bool L2Unit::read()
         {
             OpenMVData = 255;
         }
+        for (int i = 0; i < 2; i++)
+        {
+
+            touch[i] = !(bool)_serial->read();
+        }
     }
 
     Flush();
@@ -76,6 +81,12 @@ void L2Unit::print(HardwareSerial *serial)
     }
     serial->print("OpenMV: ");
     serial->print(OpenMVData);
+    serial->print("Touch: ");
+    for (int i = 0; i < 2; i++)
+    {
+        serial->print(touch[i]);
+        serial->print(" ");
+    }
     serial->println();
 }
 
@@ -93,7 +104,7 @@ void L2Unit::setCameraCCW()
 }
 void L2Unit::setCameraCW()
 {
-   // _serial->write(6);
+    // _serial->write(6);
 }
 void L2Unit::setCameraPcontrol()
 {
@@ -131,4 +142,3 @@ void L2Unit::DetachHand()
 {
     _serial->write(16);
 }
-

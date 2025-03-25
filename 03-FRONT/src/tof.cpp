@@ -6,6 +6,12 @@ ToF::ToF()
     {
         tof_values[i] = 0;
     }
+    for (int i = 1; i < 5; i++)
+    {
+        pinMode(tof_pins[i], OUTPUT);
+        digitalWrite(tof_pins[i], LOW);
+    }
+    delay(500);
 }
 void ToF::init()
 {
@@ -23,17 +29,12 @@ void ToF::getTofValues()
 
 int ToF::init_tof_sensors()
 {
-    for (int i = 1; i < 5; i++)
-    {
-        pinMode(tof_pins[i], OUTPUT);
-        digitalWrite(tof_pins[i], LOW);
-    }
-    delay(100);
+
     for (int i = 0; i < 5; i++)
     {
 
         digitalWrite(tof_pins[i], HIGH);
-        delay(20);
+        delay(100);
         tof_sensors[i].setTimeout(500);
         if (!tof_sensors[i].init())
         {
@@ -42,10 +43,11 @@ int ToF::init_tof_sensors()
             return 1;
         }
         tof_sensors[i].setAddress(0x30 + i);
+        tof_sensors[i].setMeasurementTimingBudget(50000);
 
-        tof_sensors[i].startContinuous(0);
+        tof_sensors[i].startContinuous();
 
-        delay(100);
+        // delay(100);
         // digitalWrite(tof_pins[i], LOW);
     }
     return 0;

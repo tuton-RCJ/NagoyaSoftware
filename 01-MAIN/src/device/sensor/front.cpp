@@ -37,10 +37,9 @@ bool Front::read()
             values[i] = _serial->read() << 8;
             values[i] |= _serial->read();
         }
-        return true;
     }
     Flush();
-    return false;
+    return true;
 }
 
 void Front::print(HardwareSerial *printSerial)
