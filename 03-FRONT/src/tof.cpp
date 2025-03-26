@@ -6,17 +6,19 @@ ToF::ToF()
     {
         tof_values[i] = 0;
     }
-    for (int i = 1; i < 5; i++)
+}
+void ToF::init()
+{
+    for (int i = 0; i < 5; i++)
     {
         pinMode(tof_pins[i], OUTPUT);
         digitalWrite(tof_pins[i], LOW);
     }
-    delay(500);
-}
-void ToF::init()
-{
-    while (init_tof_sensors() == 1)
-        ;
+    delay(10);
+    for (int i = 4; i >-1; i--)
+    {
+        init_tof_sensors(i);
+    }
 }
 
 void ToF::getTofValues()
@@ -27,29 +29,28 @@ void ToF::getTofValues()
     }
 }
 
-int ToF::init_tof_sensors()
+int ToF::init_tof_sensors(int i)
 {
-
-    for (int i = 0; i < 5; i++)
+    digitalWrite(tof_pins[i], HIGH);
+    delay(10);
+    //i2c_scanner();
+    tof_sensors[i].setTimeout(500);
+    if (!tof_sensors[i].init())
     {
-
-        digitalWrite(tof_pins[i], HIGH);
-        delay(100);
-        tof_sensors[i].setTimeout(500);
-        if (!tof_sensors[i].init())
-        {
-            Serial.println("Failed to detect and initialize sensor!");
-            Serial.println(i);
-            return 1;
-        }
-        tof_sensors[i].setAddress(0x30 + i);
-        tof_sensors[i].setMeasurementTimingBudget(50000);
-
-        tof_sensors[i].startContinuous();
-
-        // delay(100);
-        // digitalWrite(tof_pins[i], LOW);
+        Serial.println("Failed to detect and initialize sensor!");
+        Serial.println(i);
     }
+    else
+    {
+        tof_sensors[i].setAddress(0x30 + i);
+    }
+    tof_sensors[i].setMeasurementTimingBudget(50000);
+
+    tof_sensors[i].startContinuous();
+
+    // delay(100);
+    // digitalWrite(tof_pins[i], LOW);
+
     return 0;
 }
 
@@ -64,7 +65,7 @@ void ToF::print(HardwareSerial *serial)
     serial->println();
 }
 
-void ToF::i2c_scanner()
+bool ToF::i2c_scanner()
 {
     // scan for i2c devices
     byte error, address;
@@ -100,9 +101,13 @@ void ToF::i2c_scanner()
         }
     }
     if (nDevices == 0)
+    {
         Serial.println("No I2C devices found\n");
+        return false;
+    }
     else
+    {
         Serial.println("done\n");
-
-    delay(500);
+        return true;
+    }
 }

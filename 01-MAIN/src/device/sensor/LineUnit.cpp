@@ -32,48 +32,50 @@ bool LineUnit::read()
     {
         return false;
     }
-
-    if (_serial->read() == 0)
+    while (_serial->available() >= 23)
     {
-        for (int i = 0; i < 15; i++)
+
+        if (_serial->read() == 0)
         {
-            _photoReflector[i] = _serial->read();
-            if (_photoReflector[i] > threshold)
+            for (int i = 0; i < 15; i++)
             {
-                photoReflector[i] = 1;
+                _photoReflector[i] = _serial->read();
+                if (_photoReflector[i] > threshold)
+                {
+                    photoReflector[i] = 1;
+                }
+                else if (_photoReflector[i] < silver_threshould)
+                {
+                    photoReflector[i] = 2;
+                }
+                else
+                {
+                    photoReflector[i] = 0;
+                }
             }
-            else if (_photoReflector[i] < silver_threshould)
+            _frontPhotoReflector = _serial->read();
+            if (_frontPhotoReflector > front_threshould)
             {
-                photoReflector[i] = 2;
+                frontPhotoReflector = 1;
+            }
+            else if (_frontPhotoReflector < silver_threshould)
+            {
+                frontPhotoReflector = 2;
             }
             else
             {
-                photoReflector[i] = 0;
+                frontPhotoReflector = 0;
+            }
+            for (int i = 0; i < 3; i++)
+            {
+                colorL[i] = _serial->read();
+            }
+            for (int i = 0; i < 3; i++)
+            {
+                colorR[i] = _serial->read();
             }
         }
-        _frontPhotoReflector = _serial->read();
-        if (_frontPhotoReflector > front_threshould)
-        {
-            frontPhotoReflector = 1;
-        }
-        else if (_frontPhotoReflector < silver_threshould)
-        {
-            frontPhotoReflector = 2;
-        }
-        else
-        {
-            frontPhotoReflector = 0;
-        }
-        for (int i = 0; i < 3; i++)
-        {
-            colorL[i] = _serial->read();
-        }
-        for (int i = 0; i < 3; i++)
-        {
-            colorR[i] = _serial->read();
-        }
     }
-
     Flush();
     checkColor(colorL, colorLTime, &LastColorL);
     checkColor(colorR, colorRTime, &LastColorR);

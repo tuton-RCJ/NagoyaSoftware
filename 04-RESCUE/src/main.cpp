@@ -38,8 +38,8 @@ void init_i2c()
 
 void HandOpen()
 {
-  HandR.write(60);
-  HandL.write(130);
+  HandR.write(40);
+  HandL.write(150);
 }
 void HandClose()
 {
@@ -102,6 +102,13 @@ void ArmDown()
 void ArmUp()
 {
   AttachArm();
+  // ArmL.write(102);
+  // ArmR.write(80);
+  // for(int i=0;i<40;i+=1){
+  //   ArmL.write(102-i);
+  //   ArmR.write(80+i);
+  //   delay(10);
+  // }
   ArmL.write(62);
   ArmR.write(120);
   delay(300);
