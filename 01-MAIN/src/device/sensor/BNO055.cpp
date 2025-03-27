@@ -34,3 +34,15 @@ void BNO055::setZero()
     read();
     direction_offset = heading;
 }
+
+void BNO055::print(HardwareSerial *printSerial)
+{
+    printSerial->print("Heading: ");
+    printSerial->print(heading);
+    printSerial->print(" Pitch: ");
+    printSerial->print(pitch);
+    printSerial->print(" Roll: ");
+    printSerial->print(roll);
+    printSerial->print(" Direction: ");
+    printSerial->println(direction);
+}

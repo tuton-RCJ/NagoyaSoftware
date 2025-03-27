@@ -62,7 +62,11 @@ void loop()
   {
     RescueLoop();
     if (!isRescue)
+    {
+      sts3032.stop();
+      buzzer.EnterEvacuationZone();
       LineSetup();
+    }
   }
 }
 

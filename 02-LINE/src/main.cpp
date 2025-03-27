@@ -31,6 +31,7 @@ int startTime;
 int waitTime = 30;
 
 int shiftIn(); // 12ビット分のパルス送信と読み込み処理
+void SetLedBrightness(int brightness);
 
 void setup()
 {
@@ -40,22 +41,9 @@ void setup()
   uart3.begin(115200);
 
   strip.begin();
-  strip.show();
-  for (int i = 0; i < 3; i++)
-  {
-    strip.setPixelColor(i, 255, 255, 0);
-  }
-  strip.setBrightness(48);
-  strip.show();
 
   strip2.begin();
-  strip2.show();
-  for (int i = 0; i < 3; i++)
-  {
-    strip2.setPixelColor(i, 255, 255, 0);
-  }
-  strip2.setBrightness(48);
-  strip2.show();
+  SetLedBrightness(80);
 
   for (int i = 0; i < 16; i++)
   {
@@ -101,11 +89,24 @@ void loop()
   if (uartPort.available())
   {
     int brightness = uartPort.read();
-
-    strip.setBrightness(brightness);
-    strip2.setBrightness(brightness);
-
-    strip.show();
-    strip2.show();
+    SetLedBrightness(brightness);
   }
+}
+
+void SetLedBrightness(int brightness)
+{
+  delay(10);
+  strip.begin();
+  strip2.begin();
+  noInterrupts();
+  strip.setBrightness(brightness);
+  strip2.setBrightness(brightness);
+  for (int i = 0; i < 3; i++)
+  {
+    strip.setPixelColor(i, 255, 255, 0);
+    strip2.setPixelColor(i, 255, 255, 0);
+  }
+  strip.show();
+  strip2.show();
+  interrupts();
 }
