@@ -32,29 +32,32 @@ bool L2Unit::read()
     {
         return false;
     }
-
-    if (_serial->read() == 255)
+    while (_serial->available() >= receiveSize + 1)
     {
-        for (int i = 0; i < 2; i++)
-        {
-            // 2バイトに分割して受信
-            tof_values[i] = _serial->read() << 8;
-            tof_values[i] |= _serial->read();
-        }
-        for (int i = 0; i < 2; i++)
-        {
-            loadcell_values[i] = _serial->read();
-            loadcell_detected[i] = loadcell_values[i] > loadcell_threshold[i];
-        }
-        OpenMVData = _serial->read();
-        if (OpenMVData == 254)
-        {
-            OpenMVData = 255;
-        }
-        for (int i = 0; i < 2; i++)
-        {
 
-            touch[i] = !(bool)_serial->read();
+        if (_serial->read() == 255)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                // 2バイトに分割して受信
+                tof_values[i] = _serial->read() << 8;
+                tof_values[i] |= _serial->read();
+            }
+            for (int i = 0; i < 2; i++)
+            {
+                loadcell_values[i] = _serial->read();
+                loadcell_detected[i] = loadcell_values[i] > loadcell_threshold[i];
+            }
+            OpenMVData = _serial->read();
+            if (OpenMVData == 254)
+            {
+                OpenMVData = 255;
+            }
+            for (int i = 0; i < 2; i++)
+            {
+
+                touch[i] = !(bool)_serial->read();
+            }
         }
     }
 

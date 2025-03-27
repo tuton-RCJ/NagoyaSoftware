@@ -1,4 +1,8 @@
 #include "front.h"
+
+// uart1をextern
+extern HardwareSerial uart1;
+
 Front::Front(HardwareSerial *serial)
 {
     _serial = serial;
@@ -29,16 +33,19 @@ bool Front::read()
     {
         return false;
     }
-
-    if (_serial->read() == 255)
+    while (_serial->available() >= receiveSize + 1)
     {
-        for (int i = 0; i < NUM_VALUES; i++)
+        if (_serial->read() == 255)
         {
-            values[i] = _serial->read() << 8;
-            values[i] |= _serial->read();
+            for (int i = 0; i < NUM_VALUES; i++)
+            {
+                values[i] = _serial->read() << 8;
+                values[i] |= _serial->read();
+            }
         }
     }
     Flush();
+    print(&uart1);
     return true;
 }
 

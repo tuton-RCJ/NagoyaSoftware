@@ -74,8 +74,8 @@ void LineLoop()
     return;
 
   CheckRed();
-  CheckGreen();
   setSlopeStatus();
+  CheckGreen();
   if (l2unit.read())
   {
     CheckObject();
@@ -200,7 +200,7 @@ void CheckGreen()
       if (p == 1)
       {
         sts3032.straight(40, MoveToFront);
-        sts3032.turn(30, -80);
+        sts3032.turn(30, -90);
 
         // sts3032.drive(50, -85);
         // delay(1000);
@@ -213,7 +213,7 @@ void CheckGreen()
       if (p == 2)
       {
         sts3032.straight(40, MoveToFront);
-        sts3032.turn(30, 80);
+        sts3032.turn(30, 90);
         // sts3032.drive(50, 85);
         // delay(1000);
         sts3032.stop();

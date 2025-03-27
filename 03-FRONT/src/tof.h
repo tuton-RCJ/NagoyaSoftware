@@ -13,12 +13,12 @@ public:
     uint16_t tof_values[5];
     void getTofValues();
     void print(HardwareSerial *serial);
-    void i2c_scanner();
+    bool i2c_scanner();
 
 private:
     int tof_pins[5] = {D0, D1, D2, D3, D8};
     VL53L0X tof_sensors[5];
-    int init_tof_sensors();
+    int init_tof_sensors(int i);
 };
 
 #endif
