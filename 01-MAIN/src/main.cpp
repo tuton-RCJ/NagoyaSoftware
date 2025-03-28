@@ -33,6 +33,8 @@ extern bool GetFrontObject(int distace);
 void init_i2c();
 void Flush();
 
+void Monitor();
+
 void setup()
 {
   uart1.begin(115200);
@@ -52,6 +54,10 @@ void setup()
 
 void loop()
 {
+  // line.read();
+  // line.print(&uart1);
+  // return;
+
   if (!isRescue)
   {
     LineLoop();
@@ -82,4 +88,63 @@ void Flush()
   line.Flush();
   l2unit.Flush();
   front.Flush();
+}
+
+void Monitor()
+{
+  String sendMessage = "";
+  line.read();
+  for (int i = 0; i < 15; i++)
+  {
+    sendMessage += (String)line._photoReflector[i];
+    sendMessage += " ";
+  }
+  sendMessage += (String)line._frontPhotoReflector;
+  sendMessage += " ";
+  for (int i = 0; i < 3; i++)
+  {
+    sendMessage += (String)line.colorL[i];
+    sendMessage += " ";
+  }
+  for (int i = 0; i < 3; i++)
+  {
+    sendMessage += (String)line.colorR[i];
+    sendMessage += " ";
+  }
+  front.read();
+  for (int i = 0; i < 5; i++)
+  {
+    sendMessage += (String)front.values[i];
+    sendMessage += " ";
+  }
+  l2unit.read();
+  for (int i = 0; i < 2; i++)
+  {
+    sendMessage += (String)l2unit.loadcell_values[i];
+    sendMessage += " ";
+  }
+  tof.read();
+  for (int i = 0; i < 2; i++)
+  {
+    sendMessage += (String)tof.values[i];
+    sendMessage += " ";
+  }
+  bno.read();
+  sendMessage += (String)bno.heading;
+  sendMessage += " ";
+  sendMessage += (String)bno.pitch;
+  sendMessage += " ";
+  sendMessage += (String)bno.roll;
+  for (int i = 0; i < 2; i++)
+  {
+    sendMessage += (String)l2unit.tof_values[i];
+    sendMessage += " ";
+  }
+  for (int i = 0; i < 2; i++)
+  {
+    sendMessage += (String)l2unit.touch[i];
+    sendMessage += " ";
+  }
+  uart1.println(sendMessage);
+  l2unit.sendDisplayMessage(sendMessage);
 }

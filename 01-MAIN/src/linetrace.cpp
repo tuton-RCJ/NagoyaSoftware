@@ -42,6 +42,7 @@ bool checkBlackLine(bool isLeft);
 // ジャイロの値を読んで坂検知
 void setSlopeStatus();
 int SlopeStatus = 0; // 0:平坦 1:上り 2:下り
+unsigned long lastSlopeStatus1;
 
 extern void Flush();
 
@@ -58,6 +59,8 @@ void LineSetup()
 
     line.setBrightness(80);
   }
+  lastSlopeStatus1 = 0;
+  SlopeStatus = 0;
   Flush();
 }
 
@@ -74,6 +77,7 @@ void LineLoop()
   {
     return;
   }
+  //line.print(&uart1);
   setSlopeStatus();
   LineTrace();
   if (isRescue)
@@ -133,6 +137,12 @@ void LineTrace()
   {
     error = 0;
   }
+  if (lastSlopeStatus1 - millis() < 2000 && SlopeStatus == 2)
+  {
+    sts3032.stop();
+    delay(800);
+    return;
+  }
 
   // トの字判定。前方に黒があり、外側のセンサーが反応している場合。直角をトの字と誤検知することがあるのでスピードを落としている。
   if (abs(black_sum) > 20 && line.frontPhotoReflector == 1)
@@ -152,16 +162,20 @@ void LineTrace()
   {
     speed = 60;
   }
+  else if (abs(error) >= 2)
+  {
+    speed = 25;
+  }
 
   // PID制御
   sumError += error;
   pid = Kp * error + Ki * sumError + Kd * (error - lastError);
   lastError = error;
 
-  turnRate = pid;
+  turnRate = pid; //* speed / normalSpeed;
   if (SlopeStatus == 2)
   {
-    turnRate = (float)pid / 1.5f;
+    turnRate = pid / 4;
   }
   // sts3032.drive(speed, turnRate);
   sts3032.LeftDrive(speed + turnRate, 0);
@@ -276,6 +290,10 @@ void CheckGreen()
       Flush();
     }
   }
+  if (line.LastColorL == 4 || line.LastColorR == 4)
+  {
+    sts3032.straight(30, 30);
+  }
 }
 
 void CheckObject()
@@ -285,9 +303,9 @@ void CheckObject()
     sts3032.stop();
     buzzer.ObjectDetected();
     sts3032.straight(50, -20);
-    sts3032.turn(50, 80 * ObjectTurnDirection);
+    sts3032.turn(50, 90 * ObjectTurnDirection);
 
-    sts3032.straight(50, 30);
+    sts3032.straight(50, 40);
     TurningObject = true;
     Flush();
   }
@@ -353,10 +371,12 @@ void TurnObject()
 
 void setSlopeStatus()
 {
+  int previousStatus = SlopeStatus;
   bno.read();
   if (bno.pitch > 6)
   {
     SlopeStatus = 1; // 上り
+    lastSlopeStatus1 = millis();
   }
   else if (bno.pitch < -6)
   {
@@ -373,6 +393,10 @@ void setSlopeStatus()
   else
   {
     SlopeStatus = 0;
+  }
+  if (SlopeStatus != previousStatus)
+  {
+    l2unit.ArmUp();
   }
 }
 

@@ -26,7 +26,7 @@ public:
     void setCameraCCW();
     void setCameraPcontrol();
 
-    // void sendDisplayMessage(string message);
+    void sendDisplayMessage(String message);
     // void setDisplayStatus(int status);
 
     void ArmDown();

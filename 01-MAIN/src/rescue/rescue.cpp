@@ -32,6 +32,7 @@ extern void tremble(int times);
 
 extern void ExitSetup();
 extern bool ExitLoop();
+extern void ExitBlackSerach();
 
 extern void DriveUntilWall();
 //-----------------------------------------
@@ -105,6 +106,8 @@ void RescueLoop()
     {
         if (ExitLoop())
         {
+            ExitBlackSerach();
+            sts3032.stop();
             isRescue = false;
             // buzzer.kouka();
             return;
@@ -146,7 +149,7 @@ bool DetectVictim(int target)
     {
         sts3032.drive(80, 100 * SerchTurnDirection);
     }
-    else if (l2unit.read() && l2unit.OpenMVData > 20 && l2unit.OpenMVData < 140)
+    else if (l2unit.read() && l2unit.OpenMVData != 255) // l2unit.OpenMVData > 20 && l2unit.OpenMVData < 140)
     {
         sts3032.stop();
         unsigned long start = millis();

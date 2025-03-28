@@ -120,6 +120,7 @@ void setup()
   uart1.begin(115200);
   uart2.begin(115200);
   uart3.begin(115200);
+  uart4.begin(115200);
   init_i2c();
   loadcell.init();
   tof.init();

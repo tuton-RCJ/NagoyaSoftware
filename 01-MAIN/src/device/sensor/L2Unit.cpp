@@ -145,3 +145,9 @@ void L2Unit::DetachHand()
 {
     _serial->write(16);
 }
+
+void L2Unit::sendDisplayMessage(String message)
+{
+    _serial->write(8);
+    _serial->println(message);
+}

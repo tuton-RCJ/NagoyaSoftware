@@ -151,6 +151,11 @@ bool ExitLoop()
             l2unit.Flush();
             while (!l2unit.read())
                 ;
+            bno.read();
+            if (bno.pitch > 10)
+            {
+                sts3032.straight(30, -40);
+            }
             if (l2unit.loadcell_detected[0] && l2unit.loadcell_detected[1]) // 壁
             {
                 sts3032.stop();
@@ -189,4 +194,39 @@ void DriveUntilWall()
         ;
     delay(500);
     sts3032.stop();
+}
+
+void ExitBlackSerach()
+{
+    bno.read();
+    bno.setZero();
+    while (true)
+    {
+        Flush();
+        while (!line.read())
+            ;
+        bno.read();
+        if (bno.direction > 70 && bno.direction < 290)
+        {
+            continue;
+        }
+        bool blackFlag = false;
+        for (int i = 0; i < 15; i++)
+        {
+            if (line.photoReflector[i] == 1)
+            {
+                blackFlag = true;
+                break;
+            }
+        }
+        if (blackFlag)
+        {
+            sts3032.stop();
+            break;
+        }
+        else
+        {
+            sts3032.turn(30, 100);
+        }
+    }
 }
