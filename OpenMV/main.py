@@ -27,7 +27,7 @@ try:
 	black_exposure = 20000
 	red_exposure = 20000
 	# 黒、緑、赤に対する閾値　(L_low,L_hi,A_low,A_hi,B_low,B_hi)
-	thre_black = [(0,65,-20,5,-15,10)]
+	thre_black = [(20,65,-20,5,-20,0)]
 	thre_green = [(0, 90, -40, -10, -20, 10)]
 	thre_red = [(30, 80, 20, 70, -10, 40)]
 	#　FOMO モデルの設定もろもろ
@@ -186,7 +186,7 @@ try:
 		img.histeq(adaptive=True,clip_limit=5)
 		img.gaussian(1)
 		result = []
-		for o in img.find_blobs(thre_black,area_threshold=40,x_stride=1,merge=True,margin=20):
+		for o in img.find_blobs(thre_black,area_threshold=40,x_stride=1,merge=True,margin=10):
 			img.draw_rectangle(o[:4],colors[2])
 			if o[2]+o[3] > 100:
 				continue
