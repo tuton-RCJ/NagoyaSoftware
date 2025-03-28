@@ -12,6 +12,16 @@
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 ToF tof;
+bool isSensing = false;
+
+void LEDoff()
+{
+    for (int i = 0; i < NUMPIXELS; i++)
+    {
+        pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+    }
+    pixels.show();
+}
 
 void setup()
 {
@@ -20,32 +30,24 @@ void setup()
     Serial1.setRX(1);
     Serial1.begin(115200);
     pixels.begin();
-    pixels.setBrightness(60);
-    for (int i = 0; i < 1; i++)
-    {
-        for (int i = 0; i < NUMPIXELS; i++)
-        {
-            pixels.setPixelColor(i, pixels.Color(255, 0, 0));
-        }
-        pixels.show();
-        delay(100);
-        for (int i = 0; i < NUMPIXELS; i++)
-        {
-            pixels.setPixelColor(i, pixels.Color(0, 0, 0));
-        }
-        pixels.show();
-        //delay(100);
-    }
-    pixels.setBrightness(20);
-    pixels.show();
+    // pixels.setBrightness(60);
+    // for (int i = 0; i < 1; i++)
+    // {
+    //     for (int i = 0; i < NUMPIXELS; i++)
+    //     {
+    //         pixels.setPixelColor(i, pixels.Color(255, 255, 0));
+    //     }
+    //     pixels.show();
+    //     delay(50);
+    // }
 
     Wire.setSCL(D5);
     Wire.setSDA(D4);
     // Wire.setClock(400000);
     Wire.begin();
-    delay(10);
-    tof.init();
-
+    pixels.setBrightness(20);
+    LEDoff();
+    isSensing = false;
     // put your setup code here, to run once:
 
     // for (int i = 0; i < NUMPIXELS; i++)
@@ -55,12 +57,45 @@ void setup()
     //     delay(100);
     // }
     // Serial.println("Hello World");
-    //watchdog_enable(600, 1);
+    // watchdog_enable(600, 1);
 }
 
 void loop()
 {
-    //watchdog_update();
+
+    if (Serial1.available())
+    {
+        int data = Serial1.read();
+        if (data == 1 && !isSensing)
+        {
+            isSensing = true;
+            tof.init();
+        }
+        else if (data == 0)
+        {
+            isSensing = false;
+        }
+    }
+    if (Serial.available())
+    {
+        int data = Serial.read();
+        if (data == 1)
+        {
+            isSensing = true;
+            tof.init();
+        }
+        else if (data == 0)
+        {
+            isSensing = false;
+        }
+    }
+    if (!isSensing)
+    {
+        LEDoff();
+        tof.XshutLow();
+        return;
+    }
+    // watchdog_update();
     tof.getTofValues();
     // tof.print(&Serial);
     Serial1.write(255);

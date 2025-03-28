@@ -59,3 +59,22 @@ void Front::print(HardwareSerial *printSerial)
     }
     printSerial->println();
 }
+
+void Front::begin()
+{
+    for (int i = 0; i < 5; i++)
+    {
+        _serial->write(0x01);
+        delay(100);
+    }
+    delay(500);
+}
+
+void Front::end()
+{
+    for (int i = 0; i < 5; i++)
+    {
+        _serial->write(0x00);
+        delay(20);
+    }
+}

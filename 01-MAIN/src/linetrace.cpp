@@ -28,7 +28,7 @@ int Ki = 0;
 int lastError = 0;
 int sumError = 0;           // 積分値
 int speed;                  // 走行スピード
-const int normalSpeed = 30; // 通常時のスピード
+const int normalSpeed = 40; // 通常時のスピード
 void LineTrace();           // フォトリフレクタの値を読みライントレース。銀を検知すればレスキューモードに移行
 void CheckRed();            // 赤テープ検知
 void CheckGreen();          // 緑マーカー検知
@@ -48,11 +48,16 @@ extern void Flush();
 void LineSetup()
 {
   sumError = 0;
+  lastError = 0;
   isRescue = false;
   TurningObject = false;
   // servo.initPos();
   line.init();
-  line.setBrightness(80);
+  for (int i = 0; i < 5; i++)
+  {
+
+    line.setBrightness(80);
+  }
   Flush();
 }
 
@@ -69,12 +74,13 @@ void LineLoop()
   {
     return;
   }
+  setSlopeStatus();
   LineTrace();
   if (isRescue)
     return;
 
   CheckRed();
-  setSlopeStatus();
+
   CheckGreen();
   if (l2unit.read())
   {
@@ -134,11 +140,15 @@ void LineTrace()
     error = 0;
     speed = 20;
   }
+  else if (SlopeStatus > 0)
+  {
+    speed = 20;
+  }
   else
   {
     speed = normalSpeed;
   }
-  if (abs(error) <= 1)
+  if (abs(error) <= 1 && SlopeStatus != 2)
   {
     speed = 60;
   }
@@ -149,6 +159,10 @@ void LineTrace()
   lastError = error;
 
   turnRate = pid;
+  if (SlopeStatus == 2)
+  {
+    turnRate = (float)pid / 1.5f;
+  }
   // sts3032.drive(speed, turnRate);
   sts3032.LeftDrive(speed + turnRate, 0);
   sts3032.RightDrive(speed - turnRate, 0);
@@ -194,13 +208,21 @@ void CheckGreen()
       }
       else if (SlopeStatus == 2)
       {
-        MoveToFront = 20;
+        MoveToFront = -50;
       }
 
       if (p == 1)
       {
         sts3032.straight(40, MoveToFront);
-        sts3032.turn(30, -90);
+        if (SlopeStatus == 1)
+        {
+          sts3032.turn(30, -70);
+        }
+        else
+        {
+
+          sts3032.turn(30, -80);
+        }
 
         // sts3032.drive(50, -85);
         // delay(1000);
@@ -213,7 +235,7 @@ void CheckGreen()
       if (p == 2)
       {
         sts3032.straight(40, MoveToFront);
-        sts3032.turn(30, 90);
+        sts3032.turn(30, 80);
         // sts3032.drive(50, 85);
         // delay(1000);
         sts3032.stop();
@@ -236,10 +258,18 @@ void CheckGreen()
           sts3032.straight(50, 50);
           sts3032.turn(30, 90);
         }
+        else if (SlopeStatus == 2)
+        {
+          sts3032.turn(50, 90);
+          sts3032.straight(30, 40);
+          sts3032.turn(50, 90);
+          sts3032.straight(50, 50);
+        }
         else
         {
           sts3032.turn(50, 180);
         }
+        sts3032.straight(50, 50);
 
         sts3032.stop();
       }
@@ -324,21 +354,21 @@ void TurnObject()
 void setSlopeStatus()
 {
   bno.read();
-  if (bno.pitch > 10)
+  if (bno.pitch > 6)
   {
     SlopeStatus = 1; // 上り
   }
-  else if (bno.pitch < -10)
+  else if (bno.pitch < -6)
   {
     SlopeStatus = 2; // 下り
   }
-  else if (bno.roll > 10)
-  {
-    SlopeStatus = 3; // 右に傾いている
-  }
-  else if (bno.roll < -10)
+  else if (bno.roll > 6)
   {
     SlopeStatus = 4; // 左に傾いている
+  }
+  else if (bno.roll < -6)
+  {
+    SlopeStatus = 3; // 右に傾いている
   }
   else
   {

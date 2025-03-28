@@ -12,7 +12,8 @@ public:
     bool read();
     void Flush();
     void print(HardwareSerial *serial);
-
+    void begin();
+    void end();
 
     uint16_t values[5];
 

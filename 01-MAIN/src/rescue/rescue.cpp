@@ -32,6 +32,8 @@ extern void tremble(int times);
 
 extern void ExitSetup();
 extern bool ExitLoop();
+
+extern void DriveUntilWall();
 //-----------------------------------------
 
 int status = 0; // 0=銀を探す、1=黒を探す、2=脱出
@@ -71,6 +73,7 @@ void RescueSetup()
     TurnedOnce = true;
     victimCount = 0;
     isFrontCorner = true; // 入口も見ては行けないため、スルー。
+    front.end();
 }
 
 void RescueLoop()
@@ -87,6 +90,13 @@ void RescueLoop()
             bno.setZero();
             if (status == 2)
             {
+                if (!isFrontCorner)
+                {
+                    DetectCorner(1);
+                    DriveUntilWall();
+                    sts3032.straight(60, -40);
+                    sts3032.turn(70, 180);
+                }
                 ExitSetup();
             }
         }
@@ -96,7 +106,7 @@ void RescueLoop()
         if (ExitLoop())
         {
             isRescue = false;
-            //buzzer.kouka();
+            // buzzer.kouka();
             return;
         }
     }
@@ -134,7 +144,7 @@ bool DetectVictim(int target)
     bno.read();
     if (isFrontCorner && bno.direction > 180)
     {
-        sts3032.drive(80, 100*SerchTurnDirection);
+        sts3032.drive(80, 100 * SerchTurnDirection);
     }
     else if (l2unit.read() && l2unit.OpenMVData > 20 && l2unit.OpenMVData < 140)
     {
@@ -162,11 +172,14 @@ bool DetectVictim(int target)
         l2unit.setCameraPcontrol();
         Flush();
         isFrontCorner = false;
+        delay(300);
+
+        front.begin();
         return true;
     }
     else
     {
-        sts3032.drive(30, 100*SerchTurnDirection);
+        sts3032.drive(30, 100 * SerchTurnDirection);
     }
 
     if (bno.direction > 160 && bno.direction < 200)
@@ -185,7 +198,7 @@ bool DetectVictim(int target)
         else
         {
             sts3032.stop();
-            sts3032.turn(70, 90*SerchTurnDirection);
+            sts3032.turn(70, 90 * SerchTurnDirection);
             sts3032.straight(80, 400);
             isFrontCorner = false;
             TurnedOnce = true;
@@ -204,9 +217,9 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
     if (GetFrontObject(35))
     {
         sts3032.stop();
+        front.end();
         // sts3032.straight(30, 30);
         sts3032.straight(50, -130); // 下がる
-
         // アームを下す
         l2unit.AttachHand();
         l2unit.HandOpen();
@@ -214,6 +227,7 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
         l2unit.ArmDown();
         delay(600);
         Flush();
+        front.begin();
         // 進む
         sts3032.drive(50, 0);
         while (true)
@@ -244,14 +258,16 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
             }
             else
             {
-                if (GetFrontObject(45))
+                if (GetFrontObject(40))
                 {
                     sts3032.stop();
+                    sts3032.straight(30, -30);
                     break;
                 }
                 sts3032.drive(50, 0);
             }
         }
+        front.end();
         sts3032.stop();
         delay(500);
 
@@ -291,10 +307,22 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
 /// @return true
 bool DetectCorner(int target)
 {
-    sts3032.drive(40, 100*SerchTurnDirection);
+    sts3032.drive(50, 100 * SerchTurnDirection);
 
-    if (l2unit.read() && l2unit.OpenMVData > 70 && l2unit.OpenMVData < 90)
+    if (l2unit.read() && l2unit.OpenMVData > 50 && l2unit.OpenMVData < 110)
     {
+        if (l2unit.OpenMVData > 80)
+        {
+            sts3032.drive(20, -100);
+        }
+        else
+        {
+            sts3032.drive(20, 100);
+        }
+        sts3032.drive(20, 100 * SerchTurnDirection);
+        while (!(l2unit.read() && l2unit.OpenMVData > 70 && l2unit.OpenMVData < 90))
+            ;
+
         sts3032.stop();
         buzzer.DetectedGreenCorner();
         // sts3032.turn(40, XtoTurnRate(l2unit.OpenMVData));
@@ -313,6 +341,7 @@ bool DetectCorner(int target)
                 if (l2unit.OpenMVData != 255)
                 {
                     sts3032.turn(40, XtoTurnRate(l2unit.OpenMVData));
+                    front.begin();
 
                     // 銀の回収に戻る
                     VictimDetected = true;
@@ -373,13 +402,13 @@ bool PlaceVictim(int target)
 
         HaveVictim = false;
         ZoneDetected = false;
-        sts3032.straight(60, 50);
 
-        Flush();
         isFrontCorner = true;
         if (target == 0)
         {
-            sts3032.turn(50, -90*SerchTurnDirection);
+            sts3032.straight(60, 50);
+
+            sts3032.turn(50, -90 * SerchTurnDirection);
             if (victimCount >= 2)
             {
                 return false;
@@ -393,6 +422,9 @@ bool PlaceVictim(int target)
         }
         else
         {
+            sts3032.straight(60, 30);
+
+            Flush();
             return false;
         }
     }

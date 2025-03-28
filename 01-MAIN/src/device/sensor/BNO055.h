@@ -16,6 +16,8 @@ public:
     float direction;
     float heading, pitch, roll;
 
+    void print(HardwareSerial *printSerial);
+
 private:
     Adafruit_BNO055 _bno;
     float direction_offset ;

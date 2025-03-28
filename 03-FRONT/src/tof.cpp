@@ -6,16 +6,17 @@ ToF::ToF()
     {
         tof_values[i] = 0;
     }
-}
-void ToF::init()
-{
     for (int i = 0; i < 5; i++)
     {
         pinMode(tof_pins[i], OUTPUT);
-        digitalWrite(tof_pins[i], LOW);
     }
-    delay(10);
-    for (int i = 4; i >-1; i--)
+    XshutLow();
+}
+void ToF::init()
+{
+    XshutLow();
+    delay(50);
+    for (int i = 0; i < 5; i++)
     {
         init_tof_sensors(i);
     }
@@ -32,12 +33,14 @@ void ToF::getTofValues()
 int ToF::init_tof_sensors(int i)
 {
     digitalWrite(tof_pins[i], HIGH);
+    tof_sensors[i] = VL53L0X();
     delay(10);
-    //i2c_scanner();
+    // i2c_scanner();
     tof_sensors[i].setTimeout(500);
     if (!tof_sensors[i].init())
     {
         Serial.println("Failed to detect and initialize sensor!");
+        i2c_scanner();
         Serial.println(i);
     }
     else
@@ -109,5 +112,13 @@ bool ToF::i2c_scanner()
     {
         Serial.println("done\n");
         return true;
+    }
+}
+
+void ToF::XshutLow()
+{
+    for (int i = 0; i < 5; i++)
+    {
+        digitalWrite(tof_pins[i], LOW);
     }
 }

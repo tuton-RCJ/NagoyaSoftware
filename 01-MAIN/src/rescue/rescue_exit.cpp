@@ -29,6 +29,11 @@ void ExitSetup()
     sts3032.stop();
     sts3032.turn(30, -90 * ExitTurnDirection);
     Flush();
+    for (int i = 0; i < 5; i++)
+    {
+        tof.read();
+        delay(50);
+    }
 }
 
 /// @brief ラインを読み取る。
@@ -60,9 +65,9 @@ bool ExitLoop()
     tof.read();
 
     // 左に壁がない場合、ラインを見て入口/出口を判断。
-    if (tof.values[0] > 180)
+    if (tof.values[0] > 200)
     {
-        sts3032.straight(50, 80);
+        sts3032.straight(50, 120);
         sts3032.turn(50, -90 * ExitTurnDirection);
         unsigned long start = millis();
         sts3032.drive(40, 0);
@@ -98,7 +103,7 @@ bool ExitLoop()
             }
         }
         sts3032.stop();
-        sts3032.straight(30, -200);
+        sts3032.straight(30, -40);
         sts3032.turn(50, 90 * ExitTurnDirection);
         delay(500);
         Flush();
