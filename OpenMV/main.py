@@ -24,11 +24,11 @@ try:
 	# 露光時間 (ms)
 	silver_exposure = 4000
 	green_exposure = 25000
-	black_exposure = 25000
+	black_exposure = 20000
 	red_exposure = 20000
 	# 黒、緑、赤に対する閾値　(L_low,L_hi,A_low,A_hi,B_low,B_hi)
-	thre_black = [(0,75,-15,5,-20,-5)]
-	thre_green = [(0, 90, -40, -10, -20, 20)]
+	thre_black = [(0,65,-20,5,-15,10)]
+	thre_green = [(0, 90, -40, -10, -20, 10)]
 	thre_red = [(30, 80, 20, 70, -10, 40)]
 	#　FOMO モデルの設定もろもろ
 	min_confidence = 0.8
@@ -172,9 +172,10 @@ try:
 			sensor.set_auto_exposure(False,exposure_us=green_exposure)
 		img = sensor.snapshot().lens_corr(1.4)
 		result = []
-		for obj in img.find_blobs(thre_green,area_threshold=300,merge=True,x_stride=1):
-			img.draw_rectangle(obj[:4],colors[1])
-			result.append(bit_tuple(frame_cnt,obj[0]+obj[2]//2,obj[1]+obj[3]//2))
+		for obj in img.find_blobs(thre_green,area_threshold=300,merge=True,x_stride=1):			
+			if obj[2] / obj[3] > 1.4 and obj[2] > 50:
+				result.append(bit_tuple(frame_cnt,obj[0]+obj[2]//2,obj[1]+obj[3]//2))
+				img.draw_rectangle(obj[:4],color=colors[5])
 		return result,img
 	
 	# 黒被災者検知
@@ -185,12 +186,12 @@ try:
 		img.histeq(adaptive=True,clip_limit=5)
 		img.gaussian(1)
 		result = []
-		for o in img.find_blobs(thre_black,pixel_threshold=40,x_stride=1,merge=True,margin=20):
+		for o in img.find_blobs(thre_black,area_threshold=40,x_stride=1,merge=True,margin=20):
 			img.draw_rectangle(o[:4],colors[2])
 			if o[2]+o[3] > 100:
 				continue
-			if abs(o[2]-o[3]) < 6:
-				if  (30 < img.get_statistics(roi=(o[0],o[1],o[2],o[3])).mean() < 85) and o.roundness() > 0.30:
+			if abs(o[2]-o[3]) < 4:
+				if  (30 < img.get_statistics(roi=(o[0],o[1],o[2],o[3])).mean() < 85) and o.roundness() > 0.70:
 					img.draw_rectangle(o[:4],colors[4])
 					result.append(bit_tuple(frame_cnt,o[0]+o[2]//2,o[1]+o[3]//2))
 				print(img.get_statistics(roi=(o[0],o[1],o[2],o[3])).mean(), o.roundness())
@@ -204,8 +205,9 @@ try:
 		img = sensor.snapshot().lens_corr(1.4)
 		result = []
 		for obj in img.find_blobs(thre_red,area_threshold=300,merge=True,x_stride=1,margin=40):
-			result.append(bit_tuple(frame_cnt,obj[0]+obj[2]//2,obj[1]+obj[3]//2))
-			img.draw_rectangle(obj[:4],color=colors[5])
+			if obj[2] / obj[3] > 1.3 and obj[2] > 50:
+				result.append(bit_tuple(frame_cnt,obj[0]+obj[2]//2,obj[1]+obj[3]//2))
+				img.draw_rectangle(obj[:4],color=colors[5])
 		return result,img
 	
 	# 点群の処理と、UART
