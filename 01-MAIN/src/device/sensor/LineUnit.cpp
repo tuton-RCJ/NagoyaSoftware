@@ -95,16 +95,27 @@ void LineUnit::checkColor(int colorArr[], unsigned long colorTime[], int *LastCo
     {
         color = 1;
     }
-    else if (colorArr[0] < 150 && (float)colorArr[0] * 1.3f < colorArr[1] && _frontPhotoReflector > front_threshould) // Green
+    // else if (colorArr[0] < 140 && colorArr[1] < 140)
+    // {
+    //     color = 0;
+    // }
+    else if (colorArr[0] < 160 && (float)colorArr[0] * 1.3f < colorArr[1]) // Green
     {
+        if (frontPhotoReflector == 1)
+        {
 
-        color = 2;
+            color = 2;
+        }
+        else
+        {
+            color = 4; //間違った交差点に進んでます！
+        }
     }
     else if (colorArr[0] > colorArr[1] + 50) // Red
     {
         color = 3;
     }
-    else if (colorArr[0] < 150 && colorArr[1] < 150)
+    else if (colorArr[0] < 130 && colorArr[1] < 130)
     {
         color = 0;
     }

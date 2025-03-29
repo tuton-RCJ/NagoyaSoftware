@@ -93,10 +93,11 @@ void L2Unit::print(HardwareSerial *serial)
     serial->println();
 }
 
-void L2Unit::setCameraTarget(int target)
+void L2Unit::setCameraTarget(int target) //0=銀、1=緑、2=黒、3=赤、4=中を見る
 {
     _serial->write(target);
 }
+
 void L2Unit::setCameraIdling()
 {
     //_serial->write(4);
@@ -144,4 +145,10 @@ void L2Unit::AttachHand()
 void L2Unit::DetachHand()
 {
     _serial->write(16);
+}
+
+void L2Unit::sendDisplayMessage(String message)
+{
+    _serial->write(8);
+    _serial->println(message);
 }
