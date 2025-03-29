@@ -219,7 +219,6 @@ bool DetectVictim(int target)
 /// @return true
 bool PickUpVictim(int target) // target 0: 銀, 1: 黒
 {
-
     if (GetFrontObject(35))
     {
         sts3032.stop();
@@ -273,17 +272,55 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
                 sts3032.drive(50, 0);
             }
         }
+
         front.end();
         sts3032.stop();
         delay(500);
 
         l2unit.HandClose();
-        delay(1200);
+        delay(800);
         sts3032.straight(30, -30);
+
+        // 中を見る-----------------------------
+        l2unit.setCameraTarget(4); // 中を見る
+        delay(500);
+        Flush();
+        while (!l2unit.read())
+            ;
+        if (target == 0 && l2unit.OpenMVData == 2) // 中に黒が入った
+        {
+            tof.read();
+            int _turnR = tof.values[0] > tof.values[1] ? -90 : 90;
+            sts3032.turn(40, _turnR);
+            // sts3032.straight(50, 100);
+
+            l2unit.HandOpen();
+            delay(500);
+            l2unit.ArmUp();
+            delay(500);
+            l2unit.HandClose();
+            // sts3032.straight(50, -100);
+            sts3032.turn(40, -_turnR);
+            l2unit.setCameraTarget(target * 2);
+            front.begin();
+            delay(500);
+            Flush();
+            return true;
+        }
+
         l2unit.ArmUp();
         delay(600);
         l2unit.DetachHand();
-
+        if (l2unit.OpenMVData == 0)
+        {
+            l2unit.setCameraTarget(target * 2);
+            front.begin();
+            delay(500);
+            Flush();
+            return true;
+        }
+        // 中を見る---------------------------
+        l2unit.setCameraTarget(target * 2);
         tremble(2);
 
         HaveVictim = true;

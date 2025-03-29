@@ -81,7 +81,7 @@ void LineLoop()
   {
     return;
   }
-  // line.print(&uart1);
+  //line.print(&uart1);
   setSlopeStatus();
   LineTrace();
   if (isRescue)
@@ -161,7 +161,7 @@ void LineTrace()
   }
   else if (SlopeStatus > 0)
   {
-    speed = 40; //20
+    speed = 40; // 20
   }
   else
   {
@@ -182,10 +182,26 @@ void LineTrace()
   lastError = error;
 
   turnRate = pid; //* speed / normalSpeed;
-  // if (SlopeStatus == 2)
-  // {
-  //   turnRate = pid / 4;
-  // }
+  if (SlopeStatus == 2)
+  {
+    if (abs(error) < 2)
+    {
+      sts3032.drive(20, 0);
+    }
+    else if (abs(error) <= 8)
+    {
+      if (error > 0)
+      {
+        sts3032.drive(20, 80);
+      }
+      else
+      {
+        sts3032.drive(20, -80);
+      }
+    }
+    return;
+    // turnRate = pid;
+  }
   // sts3032.drive(speed, turnRate);
   sts3032.LeftDrive(speed + turnRate, 0);
   sts3032.RightDrive(speed - turnRate, 0);
