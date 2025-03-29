@@ -22,14 +22,14 @@ try:
 	# 初期化
 	direction = -1
 	# 露光時間 (ms)
-	silver_exposure = 4000
+	silver_exposure = 6000
 	green_exposure = 25000
-	black_exposure = 20000
+	black_exposure = 15000
 	red_exposure = 20000
 	# 黒、緑、赤に対する閾値　(L_low,L_hi,A_low,A_hi,B_low,B_hi)
-	thre_black = [(20,65,-20,5,-20,0)]
-	thre_green = [(0, 90, -40, -10, -20, 10)]
-	thre_red = [(30, 80, 20, 70, -10, 40)]
+	thre_black = [(0, 85, -10, 10, -20, 5)]
+	thre_green = [(30,100, -60, -25, -5, 20)]
+	thre_red = [(20, 75, 40, 60, 30, 60)]
 	#　FOMO モデルの設定もろもろ
 	min_confidence = 0.8
 	threshold_list = [(math.ceil(min_confidence * 255), 255)]
@@ -92,7 +92,7 @@ try:
 			print(value)
 	
 	# dbscan
-	def dbscan(points,min_pts = 3):
+	def dbscan(points,min_pts = 3 if direction == 0 else 6):
 		eps = 80	  # eps: この距離以下なら近傍とみなす
 		n = len(points)
 		visited = [False] * n
@@ -162,8 +162,11 @@ try:
 				center_x = math.floor(x + (w / 2))
 				center_y = math.floor(y + (h / 2))
 				img.draw_circle((center_x, center_y, 12), color=colors[0])
-				debug_print(f"x {center_x}\ty {center_y}\tscore {score}")
-				result.append(bit_tuple(frame_cnt,center_x,center_y))
+				stat = img.get_statistics(roi=(x,y,w,h))
+				if stat.max() - stat.min() > 40:
+					debug_print(f"x {center_x}\ty {center_y}\tscore {score}")
+					result.append(bit_tuple(frame_cnt,center_x,center_y))	
+				print(stat.max(),stat.min())
 		return result,img
 	
 	# 緑ゾーン検知
@@ -183,18 +186,15 @@ try:
 		while sensor.get_exposure_us() != black_exposure:
 			sensor.set_auto_exposure(False,exposure_us=black_exposure)
 		img = sensor.snapshot().lens_corr(1.4)
-		img.histeq(adaptive=True,clip_limit=5)
+		img.histeq(adaptive=True,clip_limit=10)
 		img.gaussian(1)
 		result = []
-		for o in img.find_blobs(thre_black,area_threshold=40,x_stride=1,merge=True,margin=10):
-			img.draw_rectangle(o[:4],colors[2])
-			if o[2]+o[3] > 100:
-				continue
-			if abs(o[2]-o[3]) < 4:
-				if  (30 < img.get_statistics(roi=(o[0],o[1],o[2],o[3])).mean() < 85) and o.roundness() > 0.70:
-					img.draw_rectangle(o[:4],colors[4])
-					result.append(bit_tuple(frame_cnt,o[0]+o[2]//2,o[1]+o[3]//2))
-				print(img.get_statistics(roi=(o[0],o[1],o[2],o[3])).mean(), o.roundness())
+		for o in img.find_circles(threshold=1800):
+			img.draw_rectangle(o[0]-o[2],o[1]-o[2],o[2]*2,o[2]*2,colors[2])
+			if  (20 < img.get_statistics(roi=(o[0]-o[2],o[1]-o[2],o[2]*2,o[2]*2)).mean() < 75):
+				img.draw_circle(o[:3],colors[4])
+				result.append(bit_tuple(frame_cnt,o[0],o[1]))
+			print(img.get_statistics(roi=(o[0]-o[2],o[1]-o[2],o[2]*2,o[2]*2)).mean())
 		return result,img
 	
 	#　赤ゾーン検知
