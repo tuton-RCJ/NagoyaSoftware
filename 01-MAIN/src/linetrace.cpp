@@ -161,7 +161,7 @@ void LineTrace()
   }
   else if (SlopeStatus > 0)
   {
-    speed = 20;
+    speed = 40; //20
   }
   else
   {
@@ -169,7 +169,7 @@ void LineTrace()
   }
   if (abs(error) <= 1 && SlopeStatus != 2)
   {
-    speed = 60;
+    speed = 40;
   }
   else if (abs(error) >= 2)
   {
@@ -182,10 +182,10 @@ void LineTrace()
   lastError = error;
 
   turnRate = pid; //* speed / normalSpeed;
-  if (SlopeStatus == 2)
-  {
-    turnRate = pid / 4;
-  }
+  // if (SlopeStatus == 2)
+  // {
+  //   turnRate = pid / 4;
+  // }
   // sts3032.drive(speed, turnRate);
   sts3032.LeftDrive(speed + turnRate, 0);
   sts3032.RightDrive(speed - turnRate, 0);
@@ -258,7 +258,16 @@ void CheckGreen()
       if (p == 2)
       {
         sts3032.straight(40, MoveToFront);
-        sts3032.turn(30, 90);
+        if (SlopeStatus == 1)
+        {
+          sts3032.turn(30, 70);
+        }
+        else
+        {
+
+          sts3032.turn(30, 90);
+        }
+
         // sts3032.drive(50, 85);
         // delay(1000);
         sts3032.stop();
