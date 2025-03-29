@@ -35,6 +35,7 @@ extern bool ExitLoop();
 extern void ExitBlackSerach();
 
 extern void DriveUntilWall();
+extern void GoNextCorner();
 //-----------------------------------------
 
 int status = 0; // 0=銀を探す、1=黒を探す、2=脱出
@@ -47,6 +48,7 @@ bool HaveVictim;     // 被災者を持っているかどうか
 
 bool TurnedHalf;
 bool TurnedOnce;
+int TurnedTimes;
 int victimCount;
 bool isFrontCorner;
 
@@ -58,6 +60,10 @@ bool DetectCorner(int target); // 避難所を探す。 target:0=緑、1=赤
 bool PlaceVictim(int target);  // 被災者を避難所に置く。 target:0=緑、1=赤
 
 unsigned long placeStartTime;
+unsigned long detectCornerStartTime;
+int detectCornerStartDir;
+
+int BallGetFromCornerDir;
 
 void RescueSetup()
 {
@@ -70,10 +76,12 @@ void RescueSetup()
     l2unit.setCameraTarget(0); // 始めは銀を探す
     l2unit.setCameraCW();
     sts3032.straight(50, 150);
-    sts3032.turn(50, -90);
+    sts3032.turn(50, 90);
     bno.setZero();
+    //sts3032.turn(50, -110);
     TurnedHalf = false;
-    TurnedOnce = true;
+    // TurnedOnce = true;
+    TurnedTimes = 0;
     victimCount = 0;
     isFrontCorner = true; // 入口も見ては行けないため、スルー。
     front.end();
@@ -141,18 +149,18 @@ bool RescueVictim(int target) // target 0: 銀, 1: 黒
     }
 }
 
-/// @brief 被災者を探す
+/// @brief 被災者を探す  ※コーナー（壁側）から探すのに対応しているものです。 壁を背にして右向きスタート
 /// @param target 0: 銀, 1: 黒
 /// @return true: 被災者を発見, false: 被災者を発見できなかった
 bool DetectVictim(int target)
 {
 
     bno.read();
-    if (isFrontCorner && bno.direction > 220)
-    {
-        sts3032.drive(80, 100 * SerchTurnDirection);
-    }
-    else if (l2unit.read() && l2unit.OpenMVData != 255) // l2unit.OpenMVData > 20 && l2unit.OpenMVData < 140)
+    // if (bno.direction > 20 && bno.direction < 160)
+    // {
+    //     sts3032.drive(60, 100 * SerchTurnDirection);
+    // }
+    if (l2unit.read() && l2unit.OpenMVData != 255) // l2unit.OpenMVData > 20 && l2unit.OpenMVData < 140)
     {
         sts3032.stop();
         unsigned long start = millis();
@@ -175,6 +183,8 @@ bool DetectVictim(int target)
         TurnedHalf = false;
         TurnedOnce = false;
         sts3032.turn(50, XtoTurnRate(l2unit.OpenMVData));
+        bno.read();
+        BallGetFromCornerDir = bno.direction;
         l2unit.setCameraPcontrol();
         Flush();
         isFrontCorner = false;
@@ -195,19 +205,22 @@ bool DetectVictim(int target)
     if (TurnedHalf && bno.direction < 30)
     {
         TurnedHalf = false;
-        if (TurnedOnce)
+        if (TurnedTimes > 6)
         {
 
-            TurnedOnce = false;
+            TurnedTimes = 0;
             return false;
         }
         else
         {
             sts3032.stop();
-            sts3032.turn(70, 90 * SerchTurnDirection);
-            sts3032.straight(80, 400);
-            isFrontCorner = false;
-            TurnedOnce = true;
+            sts3032.turn(50, 90);
+            GoNextCorner();
+            GoNextCorner();
+            delay(300);
+            bno.setZero();
+            isFrontCorner = true;
+            TurnedTimes++;
             return true;
         }
     }
@@ -338,7 +351,6 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
                 {
                     sts3032.turn(30, 90);
                 }
-                
             }
             l2unit.setCameraTarget(target * 2);
             front.begin();
@@ -353,10 +365,65 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
         HaveVictim = true;
         VictimDetected = false;
         victimCount++;
+        Flush();
+        // if (target == 0 && victimCount == 1) // 銀を1個だけ拾っているときは、もう1個ないか見る。
+        // {
+        //     sts3032.drive(30, 100);
+        //     bno.setZero();
+        //     TurnedHalf = false;
+        //     while (true)
+        //     {
+        //         bno.read();
+        //         if (bno.direction > 180 && bno.direction < 240)
+        //         {
+        //             TurnedHalf = true;
+        //         }
+        //         if (bno.direction > 0 && bno.direction < 90 && TurnedHalf)
+        //         {
+        //             sts3032.stop();
+        //             break;
+        //         }
+        //         if (l2unit.read() && l2unit.OpenMVData != 255)
+        //         {
+        //             sts3032.stop();
+        //             bool _flag = false;
+        //             unsigned long start = millis();
+        //             while (!(l2unit.read() && l2unit.OpenMVData != 255))
+        //             {
+        //                 if (millis() - start >= 200)
+        //                 {
+        //                     _flag = true;
+        //                     break;
+        //                 }
+        //             }
+        //             if (_flag)
+        //             {
+        //                 continue;
+        //             }
+
+        //             buzzer.DetectedSilverBall();
+
+        //             VictimDetected = true;
+        //             TurnedHalf = false;
+        //             TurnedOnce = false;
+        //             sts3032.turn(50, XtoTurnRate(l2unit.OpenMVData));
+        //             isFrontCorner = false;
+        //             delay(300);
+        //             Flush();
+        //             front.begin();
+        //             return true;
+        //         }
+        //     }
+        // }
         l2unit.setCameraTarget(target * 2 + 1);
         l2unit.setCameraCW();
         delay(500);
         Flush();
+        detectCornerStartTime = millis();
+        isFrontCorner = false;
+        bno.read();
+        detectCornerStartDir = bno.direction;
+        TurnedHalf = false;
     }
     else
     {
@@ -377,10 +444,12 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
 /// @return true
 bool DetectCorner(int target)
 {
-    sts3032.drive(50, 100 * SerchTurnDirection);
+    sts3032.drive(40, 100 * SerchTurnDirection);
 
     if (l2unit.read() && l2unit.OpenMVData > 40 && l2unit.OpenMVData < 120)
     {
+        TurnedHalf = false;
+        detectCornerStartTime = millis();
         if (l2unit.OpenMVData > 80)
         {
             sts3032.drive(20, -100);
@@ -447,6 +516,33 @@ bool DetectCorner(int target)
         }
         placeStartTime = millis();
     }
+    bno.read();
+    if (((int)bno.direction - detectCornerStartDir + 360) % 360 > 180 && ((int)bno.direction - detectCornerStartDir + 360) % 360 < 220)
+    {
+        TurnedHalf = true;
+    }
+    if (TurnedHalf && ((int)bno.direction - detectCornerStartDir + 360) % 360 < 30)
+    {
+
+        sts3032.stop();
+        delay(100);
+        bno.read();
+        if (!isFrontCorner)
+        {
+            sts3032.turn(40, (BallGetFromCornerDir + 180) % 360 - bno.direction); // 考えたい
+            DriveUntilWall();
+        }
+        else
+        {
+            GoNextCorner();
+        }
+
+        isFrontCorner = true;
+        detectCornerStartTime = millis();
+        bno.read();
+        detectCornerStartDir = bno.direction;
+        TurnedHalf = false;
+    }
 
     return true;
 }
@@ -479,7 +575,7 @@ bool PlaceVictim(int target)
         {
             sts3032.straight(60, 50);
 
-            sts3032.turn(50, -90 * SerchTurnDirection);
+            sts3032.turn(50, 90 * SerchTurnDirection);
             if (victimCount >= 2)
             {
                 return false;
@@ -488,6 +584,7 @@ bool PlaceVictim(int target)
             l2unit.setCameraCW();
             delay(500);
             bno.setZero();
+            TurnedTimes = 0;
             Flush();
             return true;
         }

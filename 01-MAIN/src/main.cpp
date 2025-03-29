@@ -34,7 +34,7 @@ void init_i2c();
 void Flush();
 
 void Monitor();
-
+extern void GoNextCorner();
 void setup()
 {
   uart1.begin(115200);

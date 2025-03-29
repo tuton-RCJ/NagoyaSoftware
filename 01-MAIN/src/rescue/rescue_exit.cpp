@@ -23,6 +23,7 @@ void ExitSetup();
 bool ExitLoop();
 
 void DriveUntilWall();
+extern int ReadLine();
 
 int TofExitCount;
 
@@ -37,28 +38,6 @@ void ExitSetup()
         delay(50);
     }
     TofExitCount = 0;
-}
-
-/// @brief ラインを読み取る。
-/// @return 0=白、1=黒、2=銀
-int ReadLine()
-{
-    while (!line.read())
-        ;
-
-    for (int i = 0; i < 15; i++)
-    {
-        if (line.photoReflector[i] == 1)
-        {
-            return 1;
-        }
-        else if (line.photoReflector[i] == 2)
-        {
-            return 2;
-        }
-    }
-
-    return 0;
 }
 
 /// @brief 脱出のループ
@@ -140,8 +119,8 @@ bool ExitLoop()
         { // 黒を読んだ！脱出！
             sts3032.stop();
             sts3032.straight(30, 30);
-            sts3032.turn(30,35);
-            sts3032.straight(30,50);
+            sts3032.turn(30, 35);
+            sts3032.straight(30, 50);
             return true;
         }
         if (readLine == 2)
