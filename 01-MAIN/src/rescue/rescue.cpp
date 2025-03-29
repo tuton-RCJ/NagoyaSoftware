@@ -235,6 +235,7 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
         front.begin();
         // 進む
         sts3032.drive(50, 0);
+        bool isTouchSensor = false;
         while (true)
         {
             bno.read();
@@ -251,6 +252,7 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
                 delay(500);
                 sts3032.straight(20, -5);
                 sts3032.stop();
+                isTouchSensor = true;
                 break;
             }
             else if (l2unit.touch[0])
@@ -313,6 +315,31 @@ bool PickUpVictim(int target) // target 0: 銀, 1: 黒
         l2unit.DetachHand();
         if (l2unit.OpenMVData == 0)
         {
+            if (isTouchSensor)
+            {
+                // 動く処理を入れる
+                tof.read();
+                bool isWallRight = tof.values[0] > tof.values[1];
+                if (isWallRight)
+                {
+                    sts3032.turn(30, 45);
+                }
+                else
+                {
+                    sts3032.turn(30, -45);
+                }
+                DriveUntilWall();
+                sts3032.straight(30, -10);
+                if (isWallRight)
+                {
+                    sts3032.turn(30, -90);
+                }
+                else
+                {
+                    sts3032.turn(30, 90);
+                }
+                
+            }
             l2unit.setCameraTarget(target * 2);
             front.begin();
             delay(500);
