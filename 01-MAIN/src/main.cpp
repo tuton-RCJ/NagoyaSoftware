@@ -54,6 +54,9 @@ void setup()
 
 void loop()
 {
+  // bno.read();
+  // bno.print(&uart1);
+  // return;
   // line.read();
   // line.print(&uart1);
   // return;

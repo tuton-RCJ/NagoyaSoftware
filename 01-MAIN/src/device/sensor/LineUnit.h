@@ -37,7 +37,7 @@ private:
 
     const int threshold = 200;        // フォトリフレクタの黒と白の閾値
     const int front_threshould = 225; // 前方フォトの閾値（1つ離れているため閾値が他と異なる）
-    const int silver_threshould = 25; // 銀の閾値
+    const int silver_threshould = 35; // 銀の閾値
 };
 
 #endif

@@ -57,6 +57,8 @@ bool PickUpVictim(int target); // 被災者を拾う。 target:0=銀、1=黒
 bool DetectCorner(int target); // 避難所を探す。 target:0=緑、1=赤
 bool PlaceVictim(int target);  // 被災者を避難所に置く。 target:0=緑、1=赤
 
+unsigned long placeStartTime;
+
 void RescueSetup()
 {
     VictimDetected = false;
@@ -75,6 +77,7 @@ void RescueSetup()
     victimCount = 0;
     isFrontCorner = true; // 入口も見ては行けないため、スルー。
     front.end();
+    placeStartTime = 0;
 }
 
 void RescueLoop()
@@ -145,7 +148,7 @@ bool DetectVictim(int target)
 {
 
     bno.read();
-    if (isFrontCorner && bno.direction > 180)
+    if (isFrontCorner && bno.direction > 220)
     {
         sts3032.drive(80, 100 * SerchTurnDirection);
     }
@@ -312,7 +315,7 @@ bool DetectCorner(int target)
 {
     sts3032.drive(50, 100 * SerchTurnDirection);
 
-    if (l2unit.read() && l2unit.OpenMVData > 50 && l2unit.OpenMVData < 110)
+    if (l2unit.read() && l2unit.OpenMVData > 40 && l2unit.OpenMVData < 120)
     {
         if (l2unit.OpenMVData > 80)
         {
@@ -322,7 +325,7 @@ bool DetectCorner(int target)
         {
             sts3032.drive(20, 100);
         }
-        sts3032.drive(20, 100 * SerchTurnDirection);
+        // sts3032.drive(20, 100 * SerchTurnDirection);
         while (!(l2unit.read() && l2unit.OpenMVData > 70 && l2unit.OpenMVData < 90))
             ;
 
@@ -354,30 +357,31 @@ bool DetectCorner(int target)
                 }
             }
 
-            // 黒があるか確認
-            l2unit.setCameraTarget(2);
-            l2unit.setCameraIdling();
-            delay(100);
-            l2unit.Flush();
-            for (int i = 0; i < 10; i++)
-            {
-                while (!l2unit.read())
-                    ;
-                if (l2unit.OpenMVData > 40 && l2unit.OpenMVData < 120)
-                {
-                    // 黒の処理を入れる
-                    // ToFが反応するまでまっすぐ進む
-                    // どける処理
-                    // targetを緑に戻す
-                    return true;
-                }
-            }
+            // // 黒があるか確認
+            // l2unit.setCameraTarget(2);
+            // l2unit.setCameraIdling();
+            // delay(100);
+            // l2unit.Flush();
+            // for (int i = 0; i < 10; i++)
+            // {
+            //     while (!l2unit.read())
+            //         ;
+            //     if (l2unit.OpenMVData > 40 && l2unit.OpenMVData < 120)
+            //     {
+            //         // 黒の処理を入れる
+            //         // ToFが反応するまでまっすぐ進む
+            //         // どける処理
+            //         // targetを緑に戻す
+            //         return true;
+            //     }
+            // }
             l2unit.setCameraTarget(1);
             l2unit.setCameraPcontrol();
             l2unit.setCameraIdling();
             delay(100);
             l2unit.Flush();
         }
+        placeStartTime = millis();
     }
 
     return true;
@@ -447,6 +451,47 @@ bool PlaceVictim(int target)
     else
     {
         sts3032.drive(60, 0);
+    }
+
+    if (millis() - placeStartTime > 10000)
+    {
+        tof.read();
+        bool side = tof.values[0] > tof.values[1]; // 左の方が広ければ正
+        sts3032.straight(30, -40);
+        if (side)
+        {
+            sts3032.turn(30, -40);
+            sts3032.straight(30, 40);
+            sts3032.turn(30, 40);
+        }
+        else
+        {
+
+            sts3032.turn(30, 40);
+            sts3032.straight(30, 40);
+            sts3032.turn(30, -40);
+        }
+        // sts3032.stop();
+        // sts3032.straight(20, -100);
+        // l2unit.AttachHand();
+        // delay(500);
+        // l2unit.HandOpen();
+        // delay(500);
+        // l2unit.ArmDown();
+        // delay(500);
+        // sts3032.straight(20, 130);
+        // sts3032.straight(20, -10);
+        // l2unit.HandClose();
+        // delay(500);
+        // sts3032.straight(50, -60);
+        // sts3032.turn(50, 180);
+        // l2unit.HandOpen();
+        // delay(500);
+        // l2unit.ArmUp();
+        // delay(500);
+        // l2unit.DetachHand();
+        // sts3032.turn(50, -180);
+        placeStartTime = millis();
     }
 
     return true;

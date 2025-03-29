@@ -24,6 +24,8 @@ bool ExitLoop();
 
 void DriveUntilWall();
 
+int TofExitCount;
+
 void ExitSetup()
 {
     sts3032.stop();
@@ -34,6 +36,7 @@ void ExitSetup()
         tof.read();
         delay(50);
     }
+    TofExitCount = 0;
 }
 
 /// @brief ラインを読み取る。
@@ -63,11 +66,18 @@ int ReadLine()
 bool ExitLoop()
 {
     tof.read();
-
-    // 左に壁がない場合、ラインを見て入口/出口を判断。
     if (tof.values[0] > 200)
     {
-        sts3032.straight(50, 120);
+        TofExitCount++;
+    }
+    else
+    {
+        TofExitCount = 0;
+    }
+    // 左に壁がない場合、ラインを見て入口/出口を判断。
+    if (TofExitCount >= 3)
+    {
+        sts3032.straight(50, 100);
         sts3032.turn(50, -90 * ExitTurnDirection);
         unsigned long start = millis();
         sts3032.drive(40, 0);
@@ -123,7 +133,6 @@ bool ExitLoop()
     }
     else
     {
-
         // 定数制御にするか、比例制御にするかはあなた次第。
         sts3032.drive(60, 0);
         int readLine = ReadLine();
@@ -131,6 +140,8 @@ bool ExitLoop()
         { // 黒を読んだ！脱出！
             sts3032.stop();
             sts3032.straight(30, 30);
+            sts3032.turn(30,35);
+            sts3032.straight(30,50);
             return true;
         }
         if (readLine == 2)

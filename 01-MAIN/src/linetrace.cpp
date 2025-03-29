@@ -20,7 +20,7 @@ extern bool isRescue;
 //----------------------------------------------
 
 // ライントレース PID用に変数を用意しているがP制御しかしていない
-int Kps[15] = {-7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7}; // 外側のゲインを大きくするための係数
+int Kps[15] = {-8, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 8}; // 外側のゲインを大きくするための係数
 
 int Kp = 15; // 12
 int Kd = 0;  // 10
@@ -43,8 +43,11 @@ bool checkBlackLine(bool isLeft);
 void setSlopeStatus();
 int SlopeStatus = 0; // 0:平坦 1:上り 2:下り
 unsigned long lastSlopeStatus1;
+unsigned long lastSlopeStatus0;
 
 extern void Flush();
+
+void IntoSlopeError();
 
 void LineSetup()
 {
@@ -60,6 +63,7 @@ void LineSetup()
     line.setBrightness(80);
   }
   lastSlopeStatus1 = 0;
+  lastSlopeStatus0 = 0;
   SlopeStatus = 0;
   Flush();
 }
@@ -77,7 +81,7 @@ void LineLoop()
   {
     return;
   }
-  //line.print(&uart1);
+  // line.print(&uart1);
   setSlopeStatus();
   LineTrace();
   if (isRescue)
@@ -106,10 +110,10 @@ void LineTrace()
     {
       black_sum += Kps[i];
       black_cnt++;
-      if (i == 0)
+      if (i <= 1)
         isEdgeLBlack = true;
 
-      if (i == 14)
+      if (i >= 13)
         isEdgeRBlack = true;
     }
 
@@ -137,10 +141,15 @@ void LineTrace()
   {
     error = 0;
   }
-  if (lastSlopeStatus1 - millis() < 2000 && SlopeStatus == 2)
+  if (millis() - lastSlopeStatus1 < 2000 && SlopeStatus == 2)
   {
     sts3032.stop();
     delay(800);
+    return;
+  }
+  if (millis() - lastSlopeStatus0 < 1500 && SlopeStatus == 1 && black_cnt >= 5)
+  {
+    IntoSlopeError();
     return;
   }
 
@@ -164,7 +173,7 @@ void LineTrace()
   }
   else if (abs(error) >= 2)
   {
-    speed = 25;
+    speed = 20;
   }
 
   // PID制御
@@ -235,7 +244,7 @@ void CheckGreen()
         else
         {
 
-          sts3032.turn(30, -80);
+          sts3032.turn(30, -90);
         }
 
         // sts3032.drive(50, -85);
@@ -249,7 +258,7 @@ void CheckGreen()
       if (p == 2)
       {
         sts3032.straight(40, MoveToFront);
-        sts3032.turn(30, 80);
+        sts3032.turn(30, 90);
         // sts3032.drive(50, 85);
         // delay(1000);
         sts3032.stop();
@@ -373,12 +382,12 @@ void setSlopeStatus()
 {
   int previousStatus = SlopeStatus;
   bno.read();
-  if (bno.pitch > 6)
+  if (bno.pitch > 10)
   {
     SlopeStatus = 1; // 上り
     lastSlopeStatus1 = millis();
   }
-  else if (bno.pitch < -6)
+  else if (bno.pitch < -10)
   {
     SlopeStatus = 2; // 下り
   }
@@ -393,6 +402,7 @@ void setSlopeStatus()
   else
   {
     SlopeStatus = 0;
+    lastSlopeStatus0 = millis();
   }
   if (SlopeStatus != previousStatus)
   {
@@ -427,4 +437,50 @@ bool checkBlackLine(bool isLeft)
     }
   }
   return false;
+}
+
+void IntoSlopeError()
+{
+  sts3032.stop();
+  buzzer.beep(440, 0.5);
+  sts3032.straight(30, 80);
+  bno.setZero();
+  bool turnRight = false;
+  while (true)
+  {
+    line.read();
+    int black = 0;
+    for (int i = 0; i < 15; i++)
+    {
+      if (line.photoReflector[i] == 1)
+      {
+        black++;
+      }
+    }
+    if (black <= 4 && black >= 1)
+    {
+      sts3032.stop();
+      return;
+    }
+    if (turnRight)
+    {
+      sts3032.drive(20, 100);
+    }
+    else
+    {
+      sts3032.drive(20, -100);
+    }
+    bno.read();
+    int turnDir = 30;
+    if (bno.heading >= turnDir && bno.heading <= 180)
+    {
+      sts3032.turn(30, -turnDir);
+      turnRight = false;
+    }
+    if (bno.heading <= 360 - turnDir && bno.heading >= 180)
+    {
+      sts3032.turn(30, turnDir);
+      turnRight = true;
+    }
+  }
 }

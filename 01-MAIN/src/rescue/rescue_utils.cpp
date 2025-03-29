@@ -96,7 +96,7 @@ bool GetFrontObject(int distance)
             _detectedCount++;
         }
     }
-    if (_detectedCount >= 3)
+    if (_detectedCount >= 2)
     {
         return true;
     }

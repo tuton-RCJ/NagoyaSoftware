@@ -115,7 +115,7 @@ void LineUnit::checkColor(int colorArr[], unsigned long colorTime[], int *LastCo
     {
         color = 3;
     }
-    else if (colorArr[0] < 170 && colorArr[1] < 170)
+    else if (colorArr[0] < 130 && colorArr[1] < 130)
     {
         color = 0;
     }
