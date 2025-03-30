@@ -81,7 +81,7 @@ void LineLoop()
   {
     return;
   }
-  //line.print(&uart1);
+  // line.print(&uart1);
   setSlopeStatus();
   LineTrace();
   if (isRescue)
@@ -181,26 +181,38 @@ void LineTrace()
   pid = Kp * error + Ki * sumError + Kd * (error - lastError);
   lastError = error;
 
-  turnRate = pid; //* speed / normalSpeed;
-  if (SlopeStatus == 2)
+  turnRate = pid;       //* speed / normalSpeed;
+  if (SlopeStatus == 2) // 下り坂の処理
   {
-    if (abs(error) < 2)
-    {
-      sts3032.drive(20, 0);
-    }
-    else if (abs(error) <= 8)
-    {
-      if (error > 0)
-      {
-        sts3032.drive(20, 80);
-      }
-      else
-      {
-        sts3032.drive(20, -80);
-      }
-    }
-    return;
-    // turnRate = pid;
+    // if (abs(error) < 1)
+    // {
+    //   sts3032.drive(20, 0);
+    // }
+    // else if (abs(error) <= 2)
+    // {
+    //   if (error > 0)
+    //   {
+    //     sts3032.drive(20, 100);
+    //   }
+    //   else
+    //   {
+    //     sts3032.drive(20, -100);
+    //   }
+    // }
+    // else if (abs(error) <= 8)
+    // {
+    //   if (error > 0)
+    //   {
+    //     sts3032.drive(20, 70);
+    //   }
+    //   else
+    //   {
+    //     sts3032.drive(20, -70);
+    //   }
+    // }
+    // return;
+    speed = 25;
+    turnRate = pid / 3;
   }
   // sts3032.drive(speed, turnRate);
   sts3032.LeftDrive(speed + turnRate, 0);
@@ -247,7 +259,11 @@ void CheckGreen()
       }
       else if (SlopeStatus == 2)
       {
-        MoveToFront = -50;
+        MoveToFront = 0;
+      }
+      else if (SlopeStatus == 3 || SlopeStatus == 4)
+      {
+        MoveToFront = 55;
       }
 
       if (p == 1)
@@ -257,9 +273,12 @@ void CheckGreen()
         {
           sts3032.turn(30, -70);
         }
+        else if (SlopeStatus == 3)
+        {
+          sts3032.turn(30, -80);
+        }
         else
         {
-
           sts3032.turn(30, -90);
         }
 
@@ -270,6 +289,14 @@ void CheckGreen()
         {
           sts3032.straight(30, 50);
         }
+        if (SlopeStatus == 2)
+        {
+          sts3032.straight(30, 40);
+        }
+        if (SlopeStatus == 4)
+        {
+          sts3032.straight(30, -20);
+        }
       }
       if (p == 2)
       {
@@ -278,9 +305,12 @@ void CheckGreen()
         {
           sts3032.turn(30, 70);
         }
+        else if (SlopeStatus == 4)
+        {
+          sts3032.turn(30, 80);
+        }
         else
         {
-
           sts3032.turn(30, 90);
         }
 
@@ -290,6 +320,14 @@ void CheckGreen()
         if (SlopeStatus == 4)
         {
           sts3032.straight(30, 50);
+        }
+        if (SlopeStatus == 2)
+        {
+          sts3032.straight(30, 40);
+        }
+        if (SlopeStatus == 3)
+        {
+          sts3032.straight(30, -20);
         }
       }
       if (p == 3)
